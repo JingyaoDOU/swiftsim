@@ -115,6 +115,9 @@ struct pcell {
     /*! Minimal integer end-of-timestep in this cell for hydro tasks */
     integertime_t ti_end_min;
 
+    /*! Minimal integer end-of-timestep in this cell for RT tasks */
+    integertime_t ti_rt_end_min;
+    
     /*! Maximal integer beginning-of-timestep in this cell for hydro tasks */
     integertime_t ti_beg_max;
 
@@ -232,6 +235,9 @@ struct pcell_step {
     /*! Minimal integer end-of-timestep in this cell (hydro) */
     integertime_t ti_end_min;
 
+    /*! Minimal integer end-of-timestep in this cell (rt) */
+    integertime_t ti_rt_end_min;    
+    
     /*! Maximal distance any #part has travelled since last rebuild */
     float dx_max_part;
   } hydro;
