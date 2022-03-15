@@ -484,7 +484,7 @@ void DOSELF2_NAIVE(struct runner *r, struct cell *restrict c) {
     /* Skip inhibited particles. */
     if (part_is_inhibited(pi, e)) continue;
 
-    const int pi_active = part_is_active(pi, e);
+    const int pi_active = PART_IS_ACTIVE(pi, e);
     const float hi = pi->h;
     const float hig2 = hi * hi * kernel_gamma2;
     const float pix[3] = {(float)(pi->x[0] - c->loc[0]),
@@ -502,7 +502,7 @@ void DOSELF2_NAIVE(struct runner *r, struct cell *restrict c) {
 
       const float hj = pj->h;
       const float hjg2 = hj * hj * kernel_gamma2;
-      const int pj_active = part_is_active(pj, e);
+      const int pj_active = PART_IS_ACTIVE(pj, e);
 
       /* Compute the pairwise distance. */
       const float pjx[3] = {(float)(pj->x[0] - c->loc[0]),
@@ -1094,7 +1094,7 @@ void DOPAIR1(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
       const float hi = pi->h;
 
       /* Skip inactive particles */
-      if (!part_is_active(pi, e)) continue;
+      if (!PART_IS_ACTIVE(pi, e)) continue;
 
       /* Is there anything we need to interact with ? */
       const double di = sort_i[pid].d + hi * kernel_gamma + dx_max - rshift;
@@ -1190,7 +1190,7 @@ void DOPAIR1(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
       const float hj = pj->h;
 
       /* Skip inactive particles */
-      if (!part_is_active(pj, e)) continue;
+      if (!PART_IS_ACTIVE(pj, e)) continue;
 
       /* Is there anything we need to interact with ? */
       const double dj = sort_j[pjd].d - hj * kernel_gamma - dx_max + rshift;
@@ -1459,7 +1459,7 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
 
     /* Collect the active particles in ci */
     for (int k = 0; k < count_i; k++) {
-      if (part_is_active(&parts_i[sort_i[k].i], e)) {
+      if (PART_IS_ACTIVE(&parts_i[sort_i[k].i], e)) {
         sort_active_i[count_active_i] = sort_i[k];
         count_active_i++;
       }
@@ -1478,7 +1478,7 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
 
     /* Collect the active particles in cj */
     for (int k = 0; k < count_j; k++) {
-      if (part_is_active(&parts_j[sort_j[k].i], e)) {
+      if (PART_IS_ACTIVE(&parts_j[sort_j[k].i], e)) {
         sort_active_j[count_active_j] = sort_j[k];
         count_active_j++;
       }
@@ -1512,7 +1512,7 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
 
     /* Do we need to only check active parts in cj
        (i.e. pi does not need updating) ? */
-    if (!part_is_active(pi, e)) {
+    if (!PART_IS_ACTIVE(pi, e)) {
 
       /* Loop over the *active* parts in cj within range of pi */
       for (int pjd = 0; pjd < count_active_j && sort_active_j[pjd].d < di;
@@ -1655,7 +1655,7 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
         if (r2 < hig2) {
 
           /* Does pj need to be updated too? */
-          if (part_is_active(pj, e)) {
+          if (PART_IS_ACTIVE(pj, e)) {
             IACT(r2, dx, hi, hj, pi, pj, a, H);
 #if (FUNCTION_TASK_LOOP == TASK_LOOP_DENSITY)
             runner_iact_chemistry(r2, dx, hi, hj, pi, pj, a, H);
@@ -1668,6 +1668,14 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
                                   t_current, cosmo, with_cosmology);
 #endif
           } else {
+            if(pj->id == 1546) message("HOHO1 %d %d | %d %d | %d %d", 
+                  part_is_active(pj, e), part_is_rt_active(pj, e), 
+                  part_is_active(pi, e), part_is_rt_active(pi, e), 
+                  PART_IS_ACTIVE(pj, e), PART_IS_ACTIVE(pi, e));
+            if(pi->id == 1546) message("HOHO2 %d %d | %d %d | %d %d", 
+                  part_is_active(pi, e), part_is_rt_active(pi, e), 
+                  part_is_active(pj, e), part_is_rt_active(pj, e), 
+                  PART_IS_ACTIVE(pi, e), PART_IS_ACTIVE(pj, e));
             IACT_NONSYM(r2, dx, hi, hj, pi, pj, a, H);
 #if (FUNCTION_TASK_LOOP == TASK_LOOP_DENSITY)
             runner_iact_nonsym_chemistry(r2, dx, hi, hj, pi, pj, a, H);
@@ -1715,7 +1723,7 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
 
     /* Do we need to only check active parts in ci
        (i.e. pj does not need updating) ? */
-    if (!part_is_active(pj, e)) {
+    if (!PART_IS_ACTIVE(pj, e)) {
 
       /* Loop over the *active* parts in ci. */
       for (int pid = count_active_i - 1;
@@ -1860,7 +1868,7 @@ void DOPAIR2(struct runner *r, struct cell *ci, struct cell *cj, const int sid,
         if (r2 < hjg2 && r2 >= hig2) {
 
           /* Does pi need to be updated too? */
-          if (part_is_active(pi, e)) {
+          if (PART_IS_ACTIVE(pi, e)) {
             IACT(r2, dx, hj, hi, pj, pi, a, H);
 #if (FUNCTION_TASK_LOOP == TASK_LOOP_DENSITY)
             runner_iact_chemistry(r2, dx, hj, hi, pj, pi, a, H);
@@ -2023,7 +2031,7 @@ void DOSELF1(struct runner *r, struct cell *restrict c) {
                      count * sizeof(int)) != 0)
     error("Failed to allocate indt.");
   for (int k = 0; k < count; k++)
-    if (part_is_active(&parts[k], e)) {
+    if (PART_IS_ACTIVE(&parts[k], e)) {
       indt[countdt] = k;
       countdt += 1;
     }
@@ -2048,7 +2056,7 @@ void DOSELF1(struct runner *r, struct cell *restrict c) {
     const float hig2 = hi * hi * kernel_gamma2;
 
     /* Is the ith particle inactive? */
-    if (!part_is_active(pi, e)) {
+    if (!PART_IS_ACTIVE(pi, e)) {
 
       /* Loop over the other particles .*/
       for (int pjd = firstdt; pjd < countdt; pjd++) {
@@ -2118,7 +2126,7 @@ void DOSELF1(struct runner *r, struct cell *restrict c) {
           r2 += dx[k] * dx[k];
         }
         const int doj =
-            (part_is_active(pj, e)) && (r2 < hj * hj * kernel_gamma2);
+            (PART_IS_ACTIVE(pj, e)) && (r2 < hj * hj * kernel_gamma2);
 
         const int doi = (r2 < hig2);
 
@@ -2256,7 +2264,7 @@ void DOSELF2(struct runner *r, struct cell *restrict c) {
                      count * sizeof(int)) != 0)
     error("Failed to allocate indt.");
   for (int k = 0; k < count; k++)
-    if (part_is_active(&parts[k], e)) {
+    if (PART_IS_ACTIVE(&parts[k], e)) {
       indt[countdt] = k;
       countdt += 1;
     }
@@ -2281,7 +2289,7 @@ void DOSELF2(struct runner *r, struct cell *restrict c) {
     const float hig2 = hi * hi * kernel_gamma2;
 
     /* Is the ith particle not active? */
-    if (!part_is_active(pi, e)) {
+    if (!PART_IS_ACTIVE(pi, e)) {
 
       /* Loop over the other particles .*/
       for (int pjd = firstdt; pjd < countdt; pjd++) {
@@ -2363,7 +2371,7 @@ void DOSELF2(struct runner *r, struct cell *restrict c) {
         if (r2 < hig2 || r2 < hj * hj * kernel_gamma2) {
 
           /* Does pj need to be updated too? */
-          if (part_is_active(pj, e)) {
+          if (PART_IS_ACTIVE(pj, e)) {
             IACT(r2, dx, hi, hj, pi, pj, a, H);
 #if (FUNCTION_TASK_LOOP == TASK_LOOP_DENSITY)
             runner_iact_chemistry(r2, dx, hi, hj, pi, pj, a, H);
