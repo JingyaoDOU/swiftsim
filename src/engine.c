@@ -2557,6 +2557,17 @@ e->ti_current_subcycle = e->ti_end_min;
     e->ti_earliest_undrifted = e->ti_current;
 
 
+#ifdef SWIFT_DEBUG_CHECKS
+  /* Verify that all cells have correct time-step information */
+
+  space_check_timesteps(e->s);
+
+  if (e->ti_end_min == e->ti_current && e->ti_end_min < max_nr_timesteps)
+    error("Obtained a time-step of size 0");
+
+  message("Passed space_check_timestep before subcycling");
+#endif
+
 
 
 
@@ -2585,7 +2596,7 @@ e->ti_current_subcycle = e->ti_end_min;
 
     message("cycle %d time=%e", sub_cycle, e->time);
     engine_unskip_sub_cycle(e);
-    engine_print_task_counts(e);
+    /* engine_print_task_counts(e); */
     engine_launch(e, "cycles");
 
     /* for (int i = 0; i <  e->s->nr_cells; ++i) */
@@ -2596,7 +2607,11 @@ e->ti_current_subcycle = e->ti_end_min;
 
 
 
+
 #ifdef SWIFT_DEBUG_CHECKS
+  /* TODO: reset e->max_active_timebin only when subcycling RT.
+   * otherwise, this check may fail. */
+  e->max_active_bin = get_max_active_bin(e->ti_end_min);
   /* Verify that all cells have correct time-step information */
   space_check_timesteps(e->s);
 
@@ -2999,6 +3014,7 @@ void engine_init(
   e->reparttype = reparttype;
   e->ti_old = 0;
   e->ti_current = 0;
+  e->ti_current_subcycle = 0;
   e->ti_earliest_undrifted = 0;
   e->time_step = 0.;
   e->time_base = 0.;
