@@ -206,10 +206,11 @@ __attribute__((always_inline)) INLINE static void
 particle_splitting_debug_particle(const struct part* p,
                                   const struct xpart* xp) {
 
-  printf(
-      "particle_splitting_data:\nprogenitor_id = %lli, split_tree = %lli, "
-      "split_count = %hhu\n",
-      xp->split_data.progenitor_id, xp->split_data.split_tree,
+  warning("[PID%lld] particle_splitting_data:", p->id);
+  warning(
+      "[PID%lld] progenitor_id = %lli, split_tree = %lli, "
+      "split_count = %hhu",
+      p->id, xp->split_data.progenitor_id, xp->split_data.split_tree,
       xp->split_data.split_count);
 }
 

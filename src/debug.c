@@ -102,7 +102,8 @@ void printParticle(const struct part *parts, const struct xpart *xparts,
   /* Look for the particle. */
   for (size_t i = 0; i < N; i++)
     if (parts[i].id == id) {
-      printf("## Particle[%zu]:\n id=%lld ", i, parts[i].id);
+      warning("[PID%lld] ## Particle[%zu]:\n id=%lld ", parts[i].id, i,
+              parts[i].id);
       hydro_debug_particle(&parts[i], &xparts[i]);
       cooling_debug_particle(&parts[i], &xparts[i]);
       particle_splitting_debug_particle(&parts[i], &xparts[i]);
@@ -156,11 +157,10 @@ void printgParticle(const struct gpart *gparts, const struct part *parts,
  */
 void printParticle_single(const struct part *p, const struct xpart *xp) {
 
-  printf("## Particle: id=%lld ", p->id);
+  warning("[PID%lld] ## Particle: id=%lld ", p->id, p->id);
   hydro_debug_particle(p, xp);
   cooling_debug_particle(p, xp);
   particle_splitting_debug_particle(p, xp);
-  printf("\n");
 }
 
 /**

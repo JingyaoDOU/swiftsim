@@ -22,8 +22,9 @@
 __attribute__((always_inline)) INLINE static void cooling_debug_particle(
     const struct part* p, const struct xpart* xp) {
 
-  printf("cooling_xpart_data:\nradiated_energy = %.3e\n",
-         xp->cooling_data.radiated_energy);
+  warning("[PID%lld] cooling_xpart_data:", p->id);
+  warning("[PID%lld] radiated_energy = %.3e", p->id,
+          xp->cooling_data.radiated_energy);
 }
 
 #endif /* SWIFT_COOLING_EAGLE_DEBUG_H */
