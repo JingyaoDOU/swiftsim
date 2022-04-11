@@ -38,6 +38,7 @@
 #include "hydro.h"
 #include "inline.h"
 #include "part.h"
+#include "particle_splitting.h"
 #include "space.h"
 
 /* Import the right hydro definition */
@@ -104,6 +105,7 @@ void printParticle(const struct part *parts, const struct xpart *xparts,
       printf("## Particle[%zu]:\n id=%lld ", i, parts[i].id);
       hydro_debug_particle(&parts[i], &xparts[i]);
       cooling_debug_particle(&parts[i], &xparts[i]);
+      particle_splitting_debug_particle(&parts[i], &xparts[i]);
       found = 1;
       break;
     }
@@ -157,6 +159,7 @@ void printParticle_single(const struct part *p, const struct xpart *xp) {
   printf("## Particle: id=%lld ", p->id);
   hydro_debug_particle(p, xp);
   cooling_debug_particle(p, xp);
+  particle_splitting_debug_particle(p, xp);
   printf("\n");
 }
 
