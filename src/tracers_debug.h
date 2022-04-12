@@ -16,33 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#ifndef SWIFT_COOLING_DEBUG_H
-#define SWIFT_COOLING_DEBUG_H
+#ifndef SWIFT_TRACERS_DEBUG_H
+#define SWIFT_TRACERS_DEBUG_H
 
 /* Config parameters. */
 #include "../config.h"
 
-/* Import the debug routines of the right cooling definition */
-#if defined(COOLING_NONE)
-#include "./cooling/none/cooling_debug.h"
-#elif defined(COOLING_CONST_DU)
-#include "./cooling/const_du/cooling_debug.h"
-#elif defined(COOLING_CONST_LAMBDA)
-#include "./cooling/const_lambda/cooling_debug.h"
-#elif defined(COOLING_COMPTON)
-#include "./cooling/Compton/cooling_debug.h"
-#elif defined(COOLING_GRACKLE)
-#include "./cooling/grackle/cooling_debug.h"
-#elif defined(COOLING_QLA)
-#include "./cooling/QLA/cooling_debug.h"
-#elif defined(COOLING_QLA_EAGLE)
-#include "./cooling/QLA_EAGLE/cooling_debug.h"
-#elif defined(COOLING_EAGLE)
-#include "./cooling/EAGLE/cooling_debug.h"
-#elif defined(COOLING_COLIBRE)
-#include "./cooling/COLIBRE/cooling_debug.h"
+/* Import the debug routines of the right tracers definition */
+#if defined(TRACERS_NONE)
+#include "./tracers/none/tracers_debug.h"
+#elif defined(TRACERS_EAGLE)
+#include "./tracers/EAGLE/tracers_debug.h"
 #else
-#error "Invalid choice of cooling function."
+#error "Invalid choice of tracers."
 #endif
 
-#endif /* SWIFT_COOLING_DEBUG_H */
+#endif /* SWIFT_TRACERS_DEBUG_H */
