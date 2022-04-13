@@ -76,6 +76,9 @@ struct rt_part_data {
 
   /*! How many times was this particle subcycled this step */
   int debug_nsubcycles;
+
+  /*! Is this particle active in hydro in this step? */
+  int debug_hydro_active;
 };
 
 /* Additional RT data in star particle struct */

@@ -1114,31 +1114,8 @@ void runner_do_rt_advance_cell_time(struct runner *r, struct cell *c, int timer)
       /* Skip inactive parts */
       if (!part_is_rt_active(p, e)) continue;
 
-      if (p->rt_data.debug_kicked != 1 && p->rt_data.debug_nsubcycles == 0)
-        error("Trying to do rescheduling on particle %lld with wrong kick count=%d cycle=%d", p->id,
-              p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-      if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_nsubcycles > 0)
-        error("Trying to do rescheduling on particle %lld with wrong kick count=%d cycle=%d", p->id,
-              p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-
-      if (p->rt_data.debug_injection_done != 1)
-        error("Trying to do rescheduling on particle %lld with injection_done count=%d",
-              p->id, p->rt_data.debug_injection_done);
-      if (p->rt_data.debug_gradients_done != 1)
-        error("Trying to do rescheduling on particle %lld with gradients_done count=%d",
-              p->id, p->rt_data.debug_gradients_done);
-      if (p->rt_data.debug_transport_done != 1)
-        error("Trying to do rescheduling on particle %lld with with transport_done count=%d",
-              p->id, p->rt_data.debug_transport_done);
-      if (p->rt_data.debug_thermochem_done != 1)
-        error("Trying to do rescheduling on particle %lld with with thermochem_done count=%d",
-              p->id, p->rt_data.debug_thermochem_done);
-
-      /* Don't reset quantities at the end of the subcycling this step. */
-      /* TODO: skip this on the last subcycling step so proper checks at the 
-       * end of the step / output can be done*/
-      rt_debugging_reset_each_subcycle(p);
-
+      /* Run checks. */
+      rt_debug_sequence_check(p, 5, __func__);
       /* Mark that the subcycling has happened */
       rt_debugging_count_subcycle(p);
     }

@@ -20,6 +20,8 @@
 #define SWIFT_RT_DEBUG_H
 
 #include "rt_debugging.h"
+#define PROBLEM_ID 1546
+#define PROBLEM_ID2 1147
 
 /**
  * @file src/rt/debug/rt.h
@@ -70,20 +72,42 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
  * Note: during initalisation (space_init), rt_reset_part and rt_init_part
  * are both called individually. Also an extra call to rt_reset_part is made
  * in space_convert_rt_quantities_after_zeroth_step().
+ * TODO: update documentation for rt_reset_part_each_subcycle
  *
  * @param p the particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_reset_part(
-    struct part* restrict p) {
+    struct part* restrict p, int callloc) {
 
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
   p->rt_data.debug_iact_stars_inject = 0;
-
   p->rt_data.debug_nsubcycles = 0;
+  p->rt_data.debug_hydro_active = 0;
+  if (p->id == PROBLEM_ID || p->id == PROBLEM_ID2) {
+    message("resetting part %lld callloc=%d", p->id, callloc);
+  }
   p->rt_data.debug_kicked = 0;
+
+}
+
+/**
+ * @brief Reset of the RT hydro particle data not related to the density.
+ * Note: during initalisation (space_init), rt_reset_part and rt_init_part
+ * are both called individually. Also an extra call to rt_reset_part is made
+ * in space_convert_rt_quantities_after_zeroth_step().
+ * TODO: update documentation for rt_reset_part_each_subcycle
+ *
+ * @param p the particle to work on
+ */
+__attribute__((always_inline)) INLINE static void rt_reset_part_each_subcycle(
+    struct part* restrict p) {
+
   rt_debugging_reset_each_subcycle(p);
 }
+
+
+
 
 /**
  * @brief First initialisation of the RT hydro particle data.
@@ -94,7 +118,7 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
     struct part* restrict p, const struct rt_props* restrict rt_props) {
 
   rt_init_part(p);
-  rt_reset_part(p);
+  rt_reset_part(p, 0);
   p->rt_data.debug_radiation_absorbed_tot = 0ULL;
 
   /* pretend particle is drifted during startup to pass checks*/
@@ -118,15 +142,16 @@ rt_init_part_after_zeroth_step(struct part* restrict p,
    * that the checks work as intended. */
   /* TODO BEFORE MR: clean this up */
   /* rt_init_part(p); */
-  rt_reset_part(p);
+  /* rt_reset_part(p, 1); */
   /* Since the inject_prep has been moved to the density loop, the
    * initialization at startup is messing with the total counters for stars
    * because the density is called, but not the force-and-kick tasks. So reset
    * the total counters here as well so that they will match the star counters.
    */
+  p->rt_data.debug_iact_stars_inject = 0;
   p->rt_data.debug_radiation_absorbed_tot = 0ULL;
   /* We pretended everything was drifted during the initialization, now put it
-   * back into the proper state. */
+   * back into the proper state. (see rt_first_init_part)*/
   p->rt_data.debug_drifted = 0;
 }
 
@@ -312,17 +337,12 @@ __attribute__((always_inline)) INLINE static double rt_part_dt(
 __attribute__((always_inline)) INLINE static void rt_finalise_injection(
     struct part* restrict p, struct rt_props* props) {
 
-  if (p->rt_data.debug_drifted != 1) error("called rt_ghost1 on particle %lld with wrong drift count=%d", p->id, p->rt_data.debug_drifted);
-
-  if (p->rt_data.debug_kicked != 1 && p->rt_data.debug_nsubcycles == 0)
-    error("called rt_ghost1 on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-  if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_nsubcycles > 0)
-    error("called rt_ghost1 on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
+  rt_debug_sequence_check(p, 1, "rt_ghost1/rt_finalise_injection");
+  /* rt_debug_kick_check(p); */
 
   p->rt_data.debug_injection_done += 1;
 }
+
 
 /**
  * @brief finishes up the gradient computation
@@ -332,18 +352,8 @@ __attribute__((always_inline)) INLINE static void rt_finalise_injection(
 __attribute__((always_inline)) INLINE static void rt_end_gradient(
     struct part* restrict p) {
 
-  if (p->rt_data.debug_kicked != 1 && p->rt_data.debug_nsubcycles == 0)
-    error("called rt_end_gradient on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-  if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_nsubcycles > 0)
-    error("called rt_end_gradient on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-
-  if (p->rt_data.debug_injection_done != 1)
-    error(
-        "Called finalise gradient on particle %lld"
-        "where injection_done count = %d",
-        p->id, p->rt_data.debug_injection_done);
+  /* rt_debug_kick_check(p); */
+  rt_debug_sequence_check(p, 2, __func__);
 
   if (p->rt_data.debug_calls_iact_gradient_interaction == 0)
     message(
@@ -363,24 +373,7 @@ __attribute__((always_inline)) INLINE static void rt_end_gradient(
 __attribute__((always_inline)) INLINE static void rt_finalise_transport(
     struct part* restrict p, const double dt) {
 
-  if (p->rt_data.debug_kicked != 1 && p->rt_data.debug_nsubcycles == 0)
-    error("called rt_finalise_transport on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-  if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_nsubcycles > 0)
-    error("called rt_finalise_transport on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-
-  if (p->rt_data.debug_injection_done != 1)
-    error(
-        "Trying to do finalise_transport on particle %lld when "
-        "injection_done count is %d",
-        p->id, p->rt_data.debug_injection_done);
-
-  if (p->rt_data.debug_gradients_done != 1)
-    error(
-        "Trying to do finalise_transport on particle %lld when "
-        "gradients_done count is %d",
-        p->id, p->rt_data.debug_gradients_done);
+  rt_debug_sequence_check(p, 3, __func__);
 
   if (p->rt_data.debug_calls_iact_transport_interaction == 0)
     message(
@@ -412,23 +405,7 @@ __attribute__((always_inline)) INLINE static void rt_tchem(
     const struct phys_const* restrict phys_const,
     const struct unit_system* restrict us, const double dt) {
 
-  if (p->rt_data.debug_kicked != 1 && p->rt_data.debug_nsubcycles == 0)
-    error("called rt_tchem on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-  if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_nsubcycles > 0)
-    error("called rt_tchem on particle %lld with wrong kick count=%d cycle=%d", p->id,
-          p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
-
-  if (p->rt_data.debug_injection_done != 1)
-    error("Part %lld trying to do thermochemistry when injection_done != 1: %d",
-          p->id, p->rt_data.debug_injection_done);
-  if (p->rt_data.debug_gradients_done != 1)
-    error("Part %lld trying to do thermochemistry when gradients_done != 1: %d",
-          p->id, p->rt_data.debug_gradients_done);
-  if (p->rt_data.debug_transport_done != 1)
-    error("Part %lld trying to do thermochemistry when transport_done != 1: %d",
-          p->id, p->rt_data.debug_transport_done);
-
+  rt_debug_sequence_check(p, 4, __func__);
   p->rt_data.debug_thermochem_done += 1;
 
   /* rt_do_thermochemistry(p); */
@@ -454,9 +431,12 @@ __attribute__((always_inline)) INLINE static void rt_kick_extra(
   /* Don't account for timestep_sync backward kicks */
   if (dt_therm >= 0.f && dt_grav >= 0.f && dt_hydro >= 0.f &&
       dt_kick_corr >= 0.f) {
-    /* if (p->rt_data.debug_drifted != 1) error("kicking undrifted particle %lld", p->id); */
-
+    rt_debug_sequence_check(p, 0, __func__);
     p->rt_data.debug_kicked += 1;
+
+    if (p->id == PROBLEM_ID || p->id == PROBLEM_ID2) {
+      message("Kicking part %lld count=%d", p->id, p->rt_data.debug_kicked);
+    }
   }
 }
 

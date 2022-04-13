@@ -53,6 +53,22 @@ __attribute__((always_inline)) INLINE static void rt_debugging_reset_each_subcyc
 }
 
 /**
+ * @brief Mark whether this particle is hydro active or not. 
+ *
+ * @param p particle to work with
+ * @param active whether particle is active or not
+ **/
+__attribute__((always_inline)) INLINE static void rt_debugging_set_part_is_active(struct part* restrict p, int active){
+
+  /* Only store this on subcycle 0! After the timestep task,
+   * part_is_active() will give you the answer for the next step,
+   * not for the one that just was. */
+  if (p->rt_data.debug_nsubcycles == 0)
+    p->rt_data.debug_hydro_active = active;
+  if (p->id == 1546) message("ID %lld active? %d cycle %d", p->id, active, p->rt_data.debug_nsubcycles);
+}
+
+/**
  * @brief Debugging checks loop over all star particles after each time step
  */
 static void rt_debugging_end_of_step_stars_mapper(void *restrict map_data,
@@ -122,6 +138,7 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
 
   struct space *s = e->s;
   if (!(e->policy & engine_policy_rt)) return;
+  
 #ifdef WITH_MPI
   /* Since we aren't sending data back, none of these checks will
    * pass a run over MPI. */
@@ -152,7 +169,6 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
 
   /* Have we accidentally invented or deleted some radiation somewhere? */
 
-  /* TODO: fix this */
   if ((e->rt_props->debug_radiation_emitted_this_step !=
        e->rt_props->debug_radiation_absorbed_this_step) ||
       (e->rt_props->debug_radiation_emitted_tot !=
@@ -169,6 +185,107 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
   if (verbose)
     message("took %.3f %s.", clocks_from_ticks(getticks() - tic),
             clocks_getunit());
+}
+
+/**
+ * @brief Perform a series of consistency and sanity checks.
+ *
+ * @param p particle to check
+ * @param loc location where this is called from. This determines which checks
+ * will be done:
+ *
+ * 0: during kicks/after drifts.
+ * 1: during rt_ghost1/finalise_injection / after kicks.
+ * 2: during gradients / after injection.
+ * 3: during transport / after gradients.
+ * 4: during thermochem / after transport.
+ * 5: after thermochem.
+ *
+ * @param function_name: Function name (or message) you want printed on error.
+ */
+__attribute__((always_inline)) INLINE static void rt_debug_sequence_check(struct part* restrict p, int loc, const char *function_name){
+
+
+  /* Have we been drifted? */
+  if (p->rt_data.debug_drifted != 1) 
+    error("called %s on particle %lld with wrong drift count=%d", function_name, p->id, p->rt_data.debug_drifted);
+
+
+  if (loc > 0) {
+    /* Are kicks done? */
+
+    /* For the kick check, we have following possible scenarios:
+     *
+     * Legend:
+     *  TS: timestep task
+     *  K1, K2: kick1, kick 2
+     *  RT0, RT1, ... : N-th RT subcycle.
+     *  H: hydro tasks. this resets the counter.
+     * Top row is task execution sequence. Bottom row is how the kick counter behaves.
+     *
+     * 1) part is hydro active, and remains hydro active after TS
+     *   H -> K2 -> RT 0 -> TS -> K1 -> RT 1 -> RT 2 ... 
+     *   0     1       1     1     2       2       2     
+     * 2) part is hydro active, and becomes hydro inactive after TS
+     *   H -> K2 -> RT 0 -> TS -> RT 1 -> RT 2 ... |
+     *   0     1       1     1       1       1     |
+     * 3) part is hydro inactive, and remains hydro inactive
+     *   we pick up where 2 left off, and the counter doesn't change:
+     *   RT X -> TS -> RT X+1 -> RT X+2 ... 
+     *      1     1         1         1    
+     * 4) part is hydro inactive, and becomes active
+     *   RT X -> TS -> K1 -> RT X+1 -> RT X+2 ... | H -> K2 -> RT 0 -> ...
+     *      1     1     2         2         2       0     1       
+     *            ^-- becomes active here
+     * 
+     * To sum up:
+     * - on the zeroth subcycle, the kick counter should always be = 1
+     * - if the particle is currently inactive, the counter should always be = 1
+     * - if the particle is currently active, the counter may be 1 or 2.
+     */
+    if (p->rt_data.debug_nsubcycles == 0){
+      if (p->rt_data.debug_kicked != 1)
+        error("called %s on particle %lld with wrong kick count=%d (expected %d) cycle=%d", 
+            function_name, p->id, p->rt_data.debug_kicked, 1, p->rt_data.debug_nsubcycles);
+    } else if (p->rt_data.debug_nsubcycles > 0){
+        if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_kicked != 1)
+          error("called %s on particle %lld with wrong kick count=%d (expected 1 or 2) cycle=%d", 
+              function_name, p->id, p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
+    } else {
+      error("Got negative subcycle???");
+    }
+  }
+
+  if (loc > 1) {
+    /* is injection done? */
+    if (p->rt_data.debug_injection_done != 1)
+      error(
+        "Trying to do %s when finalise injection count is "
+        "%d ID %lld", function_name, p->rt_data.debug_injection_done, p->id);
+  }
+
+  if (loc > 2) {
+    /* are gradients done? */
+    if (p->rt_data.debug_gradients_done != 1)
+      error(
+          "Trying to do %s on particle %lld when "
+          "gradients_done count is %d",
+          function_name, p->id, p->rt_data.debug_gradients_done);
+  }
+
+  if (loc > 3){
+    /* is transport done? */
+    if (p->rt_data.debug_transport_done != 1)
+      error("Part %lld trying to do thermochemistry when transport_done != 1: %d",
+            p->id, p->rt_data.debug_transport_done);
+  }
+
+  if (loc > 4){
+    /* is thermochemistry done? */
+    if (p->rt_data.debug_thermochem_done != 1)
+      error("Trying to do rescheduling on particle %lld with with thermochem_done count=%d",
+            p->id, p->rt_data.debug_thermochem_done);
+  }
 }
 
 #endif /* SWIFT_RT_DEBUGGING_DEBUG_H */

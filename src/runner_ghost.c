@@ -1263,7 +1263,7 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
 
 #endif /* EXTRA_HYDRO_LOOP */
 
-            rt_reset_part(p);
+            rt_reset_part(p, 2);
 
             /* Ok, we are done with this particle */
             continue;
@@ -1426,7 +1426,7 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
 
 #endif /* EXTRA_HYDRO_LOOP */
 
-        rt_reset_part(p);
+        rt_reset_part(p, 3);
       }
 
       /* We now need to treat the particles whose smoothing length had not
@@ -1569,6 +1569,19 @@ void runner_do_rt_ghost1(struct runner *r, struct cell *c, int timer) {
       /* Skip inactive parts */
       if (!part_is_rt_active(p, e)) continue;
 
+      /* First reset everything that needs to be reset for the following
+       * subcycle */
+      rt_reset_part_each_subcycle(p);
+
+#ifdef SWIFT_RT_DEBUG_CHECKS
+      if (p->id == 1546) message("check part %lld %d %d %d | cell %lld %d %d", 
+          p->id, part_is_active(p, e), part_is_rt_active(p, e), p->rt_data.debug_nsubcycles, 
+          c->cellID, cell_is_active_hydro(c, e), cell_is_rt_active(c, e)
+      );
+
+#endif
+
+      /* Now finish up injection */
       rt_finalise_injection(p, e->rt_props);
     }
   }
