@@ -975,8 +975,8 @@ int main(int argc, char *argv[]) {
 
     /* And initialize the engine with the space and policies. */
     engine_config(/*restart=*/1, /*fof=*/0, &e, params, nr_nodes, myrank,
-                  nr_threads, nr_pool_threads, with_aff, talking,
-                  restart_file, &reparttype);
+                  nr_threads, nr_pool_threads, with_aff, talking, restart_file,
+                  &reparttype);
 
     /* Check if we are already done when given steps on the command-line. */
     if (e.step >= nsteps && nsteps > 0)
@@ -1476,17 +1476,17 @@ int main(int argc, char *argv[]) {
                 N_total[swift_type_count], N_total[swift_type_sink],
                 N_total[swift_type_stars], N_total[swift_type_black_hole],
                 N_total[swift_type_dark_matter_background],
-                N_total[swift_type_neutrino], engine_policies, talking,
-                &us, &prog_const, &cosmo, &hydro_properties,
-                &entropy_floor, &gravity_properties, &stars_properties,
-                &black_holes_properties, &sink_properties, &neutrino_properties,
-                &neutrino_response, &feedback_properties, &pressure_floor_props,
-                &rt_properties, &mesh, &potential, &cooling_func, &starform,
-                &chemistry, &extra_io_props, &fof_properties, &los_properties,
+                N_total[swift_type_neutrino], engine_policies, talking, &us,
+                &prog_const, &cosmo, &hydro_properties, &entropy_floor,
+                &gravity_properties, &stars_properties, &black_holes_properties,
+                &sink_properties, &neutrino_properties, &neutrino_response,
+                &feedback_properties, &pressure_floor_props, &rt_properties,
+                &mesh, &potential, &cooling_func, &starform, &chemistry,
+                &extra_io_props, &fof_properties, &los_properties,
                 &lightcone_array_properties, &ics_metadata);
     engine_config(/*restart=*/0, /*fof=*/0, &e, params, nr_nodes, myrank,
-                  nr_threads, nr_pool_threads, with_aff, talking,
-                  restart_file, &reparttype);
+                  nr_threads, nr_pool_threads, with_aff, talking, restart_file,
+                  &reparttype);
 
     /* Compute some stats for the star formation */
     if (with_star_formation) {
