@@ -20,6 +20,7 @@
 #define SWIFT_RT_DEBUGGING_DEBUG_H
 
 #include "rt_properties.h"
+#include "active.h"
 
 /**
  * @file src/rt/debug/rt_debugging.h
@@ -50,22 +51,6 @@ __attribute__((always_inline)) INLINE static void rt_debugging_reset_each_subcyc
   p->rt_data.debug_gradients_done = 0;
   p->rt_data.debug_transport_done = 0;
   p->rt_data.debug_thermochem_done = 0;
-}
-
-/**
- * @brief Mark whether this particle is hydro active or not. 
- *
- * @param p particle to work with
- * @param active whether particle is active or not
- **/
-__attribute__((always_inline)) INLINE static void rt_debugging_set_part_is_active(struct part* restrict p, int active){
-
-  /* Only store this on subcycle 0! After the timestep task,
-   * part_is_active() will give you the answer for the next step,
-   * not for the one that just was. */
-  if (p->rt_data.debug_nsubcycles == 0)
-    p->rt_data.debug_hydro_active = active;
-  if (p->id == 1546) message("ID %lld active? %d cycle %d", p->id, active, p->rt_data.debug_nsubcycles);
 }
 
 /**
@@ -123,8 +108,63 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
   atomic_add(&e->rt_props->debug_radiation_absorbed_this_step,
              absorption_sum_this_step);
   atomic_add(&e->rt_props->debug_radiation_absorbed_tot, absorption_sum_tot);
+
 }
 
+
+/**
+ * @brief Debugging checks loop over all hydro particles after each time step
+ */
+static void rt_debugging_start_of_step_hydro_mapper(void *restrict map_data,
+                                                  int count,
+                                                  void *restrict extra_data) {
+
+  struct part *restrict parts = (struct part *)map_data;
+  const struct engine *restrict e = (struct engine *)extra_data;
+
+  for (int k = 0; k < count; k++) {
+
+    struct part *restrict p = &parts[k];
+    p->rt_data.debug_hydro_active = part_is_active(p, e);
+    p->rt_data.debug_rt_active_on_main_step = part_is_rt_active(p, e);
+    p->rt_data.debug_rt_zeroth_cycle_on_main_step = 
+      part_is_rt_active(p, e) && (p->rt_data.debug_nsubcycles == 0) && part_is_active(p, e);
+    /* if (!p->rt_data.debug_rt_zeroth_cycle_on_main_step) */
+  /*       message("??? %d %d %d", part_is_active(p, e), part_is_rt_active(p, e), p->rt_data.debug_nsubcycles); */
+  }
+}
+
+/**
+ * @brief Do some checks and set necessary flags before each (main) step is taken. 
+ *
+ * @param e The #engine.
+ * @param verbose Are we talkative?
+ */
+__attribute__((always_inline)) INLINE static void
+rt_debugging_checks_start_of_step(struct engine *e, int verbose) {
+
+  struct space *s = e->s;
+  if (!(e->policy & engine_policy_rt)) return;
+
+  const ticks tic = getticks();
+
+  /* hydro particle loop */
+  if (s->nr_parts > 0)
+    threadpool_map(&e->threadpool, rt_debugging_start_of_step_hydro_mapper,
+                   s->parts, s->nr_parts, sizeof(struct part),
+                   threadpool_auto_chunk_size, /*extra_data=*/e);
+
+  /* star particle loop */
+  /* if (s->nr_sparts > 0) */
+  /*   threadpool_map(&e->threadpool, rt_debugging_start_of_step_stars_mapper, */
+  /*                  s->sparts, s->nr_sparts, sizeof(struct spart), */
+  /*                  threadpool_auto_chunk_size, [>extra_data=<]e); */
+
+  if (verbose)
+    message("took %.3f %s.", clocks_from_ticks(getticks() - tic),
+            clocks_getunit());
+}
+ 
 /**
  * @brief At the end of each time step, loop over both hydro and star
  * particles and do whatever checks for this particular time step you
@@ -226,30 +266,41 @@ __attribute__((always_inline)) INLINE static void rt_debug_sequence_check(struct
      * 1) part is hydro active, and remains hydro active after TS
      *   H -> K2 -> RT 0 -> TS -> K1 -> RT 1 -> RT 2 ... 
      *   0     1       1     1     2       2       2     
-     * 2) part is hydro active, and becomes hydro inactive after TS
-     *   H -> K2 -> RT 0 -> TS -> RT 1 -> RT 2 ... |
-     *   0     1       1     1       1       1     |
+     * 2) part is hydro active, and becomes hydro inactive after TS.
+     *    Kick1 still gets called, because part_is_starting = 1
+     *   H -> K2 -> RT 0 -> TS -> K1 -> RT 1 -> RT 2 ... |
+     *   0     1       1     1     2       2       2 ... |
      * 3) part is hydro inactive, and remains hydro inactive
-     *   we pick up where 2 left off, and the counter doesn't change:
+     *    we pick up where 2 left off, and the counter doesn't change:
      *   RT X -> TS -> RT X+1 -> RT X+2 ... 
-     *      1     1         1         1    
+     *      2     2         2         2    
      * 4) part is hydro inactive, and becomes active
+     *    Kick1 doesn't increase the counter because part_is_starting = 0
      *   RT X -> TS -> K1 -> RT X+1 -> RT X+2 ... | H -> K2 -> RT 0 -> ...
-     *      1     1     2         2         2       0     1       
+     *      2     2     2         2         2       0     1       1 
      *            ^-- becomes active here
-     * 
-     * To sum up:
-     * - on the zeroth subcycle, the kick counter should always be = 1
-     * - if the particle is currently inactive, the counter should always be = 1
-     * - if the particle is currently active, the counter may be 1 or 2.
+     * 5) Particle is hydro active, isn't radioactive after hydro, but becomes 
+     *    radioactive during a subcycle. I.e. the zeroth subcycle does not
+     *    happen right after the kick2.
+     *  H -> K2 -> TS -> K1 | -> RT0 -> RT1 -> ...
+     *  0 ->  1 ->  1 ->  2 | ->   2 ->   2 -> ...
      */
     if (p->rt_data.debug_nsubcycles == 0){
-      if (p->rt_data.debug_kicked != 1)
-        error("called %s on particle %lld with wrong kick count=%d (expected %d) cycle=%d", 
-            function_name, p->id, p->rt_data.debug_kicked, 1, p->rt_data.debug_nsubcycles);
+      if (p->rt_data.debug_rt_zeroth_cycle_on_main_step){
+        /* This covers case 1 & 2 */
+        if (p->rt_data.debug_kicked != 1)
+          error("called %s on particle %lld with wrong kick count=%d (expected 1) cycle=%d", 
+            function_name, p->id, p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
+      } else {
+        /* This covers case 5 */
+        if (p->rt_data.debug_kicked != 2)
+          error("called %s on particle %lld with wrong kick count=%d (expected 2) cycle=%d", 
+            function_name, p->id, p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
+      } 
     } else if (p->rt_data.debug_nsubcycles > 0){
-        if (p->rt_data.debug_kicked != 2 && p->rt_data.debug_kicked != 1)
-          error("called %s on particle %lld with wrong kick count=%d (expected 1 or 2) cycle=%d", 
+      /* This covers case 1, 2, 3, 4, 5 */
+      if (p->rt_data.debug_kicked != 2)
+        error("called %s on particle %lld with wrong kick count=%d (expected 2) cycle=%d", 
               function_name, p->id, p->rt_data.debug_kicked, p->rt_data.debug_nsubcycles);
     } else {
       error("Got negative subcycle???");

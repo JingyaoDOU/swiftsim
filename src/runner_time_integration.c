@@ -144,7 +144,7 @@ void runner_do_kick1(struct runner *r, struct cell *c, const int timer) {
       struct part *restrict p = &parts[k];
       struct xpart *restrict xp = &xparts[k];
 
-      if (p->id == 1546) message("check part %lld %d %d %d | cell %lld %d %d", 
+      if (p->id == 1546) message("check part %lld HA %d RTA %d SC %d | cell %lld HA %d RTA %d", 
           p->id, part_is_active(p, e), part_is_rt_active(p, e), p->rt_data.debug_nsubcycles, 
           c->cellID, cell_is_active_hydro(c, e), cell_is_rt_active(c, e)
       );
@@ -421,7 +421,7 @@ void runner_do_kick2(struct runner *r, struct cell *c, const int timer) {
       struct part *restrict p = &parts[k];
       struct xpart *restrict xp = &xparts[k];
 
-      if (p->id == 1546) message("check part %lld %d %d %d | cell %lld %d %d", 
+      if (p->id == 1546) message("check part %lld HA %d RTA %d SC %d | cell %lld HA %d RTA %d", 
           p->id, part_is_active(p, e), part_is_rt_active(p, e), p->rt_data.debug_nsubcycles, 
           c->cellID, cell_is_active_hydro(c, e), cell_is_rt_active(c, e)
       );

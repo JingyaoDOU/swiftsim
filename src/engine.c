@@ -1939,6 +1939,7 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
 
   /* Initialise additional RT data now that time bins are set */
 #ifdef SWIFT_RT_DEBUG_CHECKS
+  message("RESETTING AFTER ZEROTH STEP");
   if (e->policy & engine_policy_rt)
     space_convert_rt_quantities_after_zeroth_step(e->s, e->verbose);
 #endif
@@ -2215,49 +2216,6 @@ void engine_step(struct engine *e) {
 
 
 
-/*  */
-/*   const integertime_t rt_step_size = e->ti_rt_end_min - e->ti_old; */
-/*   const int nr_rt_cycles = (e->ti_end_min - e->ti_old) / rt_step_size; */
-/*   message("NR cycles: %d | current %lld end_min %lld", nr_rt_cycles, e->ti_current, e->ti_end_min); */
-/*  */
-/*   for (int sub_cycle = 0; sub_cycle < nr_rt_cycles - 1; ++sub_cycle) { */
-/*  */
-/*     //e->ti_old = e->ti_current; */
-/*     e->ti_current = e->ti_old + (sub_cycle + 1) * rt_step_size; */
-/*     e->max_active_bin = get_max_active_bin(e->ti_current); */
-/*     e->min_active_bin = get_min_active_bin(e->ti_current, e->ti_current - rt_step_size); */
-/*  */
-/*     // think cosmology one day */
-/*     e->time = e->ti_current * e->time_base + e->time_begin; */
-/*     e->time_old = (e->ti_current - rt_step_size) * e->time_base + e->time_begin; */
-/*     e->time_step = rt_step_size * e->time_base; */
-/*  */
-/*     message("cycle %d time=%e", sub_cycle, e->time); */
-/*     engine_unskip_sub_cycle(e); */
-/*     [> engine_print_task_counts(e); <] */
-/*     engine_launch(e, "cycles"); */
-/*  */
-/*     [> for (int i = 0; i <  e->s->nr_cells; ++i) <] */
-/*     [>   cell_update_rt_step(&e->s->cells_top[i], e, rt_step_size); <] */
-/*   } */
-/*  */
-
-
-
-
-
-
-#if defined(SWIFT_RT_DEBUG_CHECKS)
-  /* TODO: clean this up */
-  /* if we're running the debug RT scheme, do some checks after every step.
-   * Do this after the output so we can safely reset debugging checks now. */
-  /* if (e->policy & engine_policy_rt){ */
-  /*   message("RUNNING RT DEBUGGING CHECKS END OF STEP"); */
-  /*   rt_debugging_checks_end_of_step(e, e->verbose); */
-  /* } */
-#endif
-
-
 
 
 
@@ -2401,6 +2359,19 @@ void engine_step(struct engine *e) {
           num_gpart_mpole, e->total_nr_gparts);
   }
 #endif
+
+
+
+#ifdef SWIFT_RT_DEBUG_CHECKS
+  /* if we're running the debug RT scheme, set some flags and do some
+   * checks before each step. */
+    rt_debugging_checks_start_of_step(e, e->verbose);
+  /* } */
+#endif
+
+
+
+
 
 #ifdef SWIFT_GRAVITY_FORCE_CHECKS
   /* Do we need to check if all gparts are active? */
@@ -2566,6 +2537,7 @@ void engine_step(struct engine *e) {
   if (e->ti_end_min == e->ti_current && e->ti_end_min < max_nr_timesteps)
     error("Obtained a time-step of size 0");
 #endif
+
 
 
 

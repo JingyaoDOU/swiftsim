@@ -83,7 +83,6 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
    * routine to test task dependencies are done right */
   p->rt_data.debug_iact_stars_inject = 0;
   p->rt_data.debug_nsubcycles = 0;
-  p->rt_data.debug_hydro_active = 0;
   if (p->id == PROBLEM_ID || p->id == PROBLEM_ID2) {
     message("resetting part %lld callloc=%d", p->id, callloc);
   }
@@ -123,6 +122,11 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
 
   /* pretend particle is drifted during startup to pass checks*/
   p->rt_data.debug_drifted = 1;
+
+  /* Everything is active on startup.*/
+  p->rt_data.debug_hydro_active = 1;
+  p->rt_data.debug_rt_active_on_main_step = 1;
+  p->rt_data.debug_rt_zeroth_cycle_on_main_step = 1;
 }
 
 /**
@@ -153,6 +157,10 @@ rt_init_part_after_zeroth_step(struct part* restrict p,
   /* We pretended everything was drifted during the initialization, now put it
    * back into the proper state. (see rt_first_init_part)*/
   p->rt_data.debug_drifted = 0;
+
+  /* Reset number of subcycles here after zeroth step so kick count checks
+   * get the correct data. */
+  p->rt_data.debug_nsubcycles = 0;
 }
 
 /**

@@ -1547,6 +1547,9 @@ void runner_do_rt_ghost1(struct runner *r, struct cell *c, int timer) {
 
   /* Anything to do here? */
   if (count == 0) return;
+#ifdef SWIFT_RT_DEBUG_CHECKS
+  if (c->cellID == 123) message("Cell %lld active? %d %d", c->cellID, cell_is_active_hydro(c, e), cell_is_rt_active(c, e));
+#endif
   if (!cell_is_rt_active(c, e)) return;
 
   TIMER_TIC;
