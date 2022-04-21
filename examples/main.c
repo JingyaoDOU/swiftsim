@@ -741,6 +741,9 @@ int main(int argc, char *argv[]) {
   /* Read the parameter file */
   struct swift_params *params =
       (struct swift_params *)malloc(sizeof(struct swift_params));
+
+  /* In scope reference for a potential copy when restarting. */
+  struct swift_params *refparams = NULL;
   if (params == NULL) error("Error allocating memory for the parameter file.");
   if (myrank == 0) {
     message("Reading runtime parameters from file '%s'", param_filename);
@@ -972,6 +975,10 @@ int main(int argc, char *argv[]) {
       if (myrank == 0) error("Aborting");
     }
 #endif
+
+    /* Keep a copy of the params from the restart. */
+    refparams = (struct swift_params *)malloc(sizeof(struct swift_params));
+    memcpy(refparams, e.parameter_file, sizeof(struct swift_params));
 
     /* And initialize the engine with the space and policies. */
     engine_config(/*restart=*/1, /*fof=*/0, &e, params, nr_nodes, myrank,
@@ -1601,10 +1608,27 @@ int main(int argc, char *argv[]) {
   /* dump the parameters as used. */
   if (myrank == 0) {
 
-    /* used parameters */
-    parser_write_params_to_file(params, "used_parameters.yml", /*used=*/1);
-    /* unused parameters */
-    parser_write_params_to_file(params, "unused_parameters.yml", /*used=*/0);
+    const char *usedname = "used_parameters.yml";
+    const char *unusedname = "unused_parameters.yml";
+    if (restart) {
+
+      /* The used parameters can change, so try to track that. */
+      struct swift_params *tmp =
+          (struct swift_params *)malloc(sizeof(struct swift_params));
+      memcpy(tmp, refparams, sizeof(struct swift_params));
+      int changed = parser_compare_params(params, tmp);
+      if (changed > 0) {
+        char pname[64];
+        sprintf(pname, "%s.%d", usedname, e.step);
+        parser_write_params_to_file(tmp, pname, /*used=*/1);
+      }
+      free(tmp);
+
+    } else {
+      /* Just write the usual used and unused files. */
+      parser_write_params_to_file(params, usedname, /*used=*/1);
+      parser_write_params_to_file(params, unusedname, /*used=*/0);
+    }
   }
 
   /* Dump memory use report if collected for the 0 step. */
@@ -1858,6 +1882,7 @@ int main(int argc, char *argv[]) {
   extra_io_clean(e.io_extra_props);
   engine_clean(&e, /*fof=*/0, restart);
   free(params);
+  if (restart) free(refparams);
   free(output_options);
 
 #ifdef WITH_MPI
