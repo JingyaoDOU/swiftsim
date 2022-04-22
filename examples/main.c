@@ -1615,8 +1615,8 @@ int main(int argc, char *argv[]) {
       /* The used parameters can change, so try to track that. */
       struct swift_params *tmp =
           (struct swift_params *)malloc(sizeof(struct swift_params));
-      memcpy(tmp, refparams, sizeof(struct swift_params));
-      int changed = parser_compare_params(params, tmp);
+      memcpy(tmp, params, sizeof(struct swift_params));
+      int changed = parser_compare_params(refparams, tmp);
       if (changed > 0) {
         char pname[64];
         sprintf(pname, "%s.%d", usedname, e.step);
