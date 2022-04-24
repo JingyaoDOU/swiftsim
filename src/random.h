@@ -42,7 +42,6 @@
  * generator.
  * In case new numbers need to be added other possible
  * numbers could be:
- * 126247697
  * 193877777
  * 303595777
  * 384160001
@@ -64,6 +63,7 @@ enum random_number_type {
   random_number_BH_swallow = 4947009007LL,
   random_number_BH_reposition = 59969537LL,
   random_number_snapshot_sampling = 6561001LL,
+  random_number_powerspectrum_split = 126247697LL,
 };
 
 #ifndef __APPLE__

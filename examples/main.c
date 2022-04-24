@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
   struct extra_io_properties extra_io_props;
   struct star_formation starform;
   struct pm_mesh mesh;
+  struct power_spectrum_data pow_data;
   struct gpart *gparts = NULL;
   struct gravity_props gravity_properties;
   struct hydro_props hydro_properties;
@@ -187,6 +188,7 @@ int main(int argc, char *argv[]) {
   int with_gear = 0;
   int with_line_of_sight = 0;
   int with_rt = 0;
+  int with_power = 0;
   int verbose = 0;
   int nr_threads = 1;
   int nr_pool_threads = -1;
@@ -341,6 +343,8 @@ int main(int argc, char *argv[]) {
                 "Fraction of the total step's time spent in a task to trigger "
                 "a dump of the task plot on this step",
                 NULL, 0, 0),
+      OPT_BOOLEAN(0, "power", &with_power, "Run with power spectrum outputs.",
+                  NULL, 0, 0),
       OPT_END(),
   };
   struct argparse argparse;
@@ -1164,6 +1168,17 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
+    /* Initialize power spectra calculation */
+    if (with_power) {
+#ifdef HAVE_FFTW
+      power_init(&pow_data, params, nr_threads);
+#else
+      error("No FFTW library found. Cannot compute power spectra.");
+#endif
+    } else {
+      bzero(&pow_data, sizeof(struct power_spectrum_data));
+    }
+
     /* Be verbose about what happens next */
     if (myrank == 0) message("Reading ICs from file '%s'", ICfileName);
     if (myrank == 0 && cleanup_h)
@@ -1469,6 +1484,7 @@ int main(int argc, char *argv[]) {
     if (with_line_of_sight) engine_policies |= engine_policy_line_of_sight;
     if (with_sink) engine_policies |= engine_policy_sinks;
     if (with_rt) engine_policies |= engine_policy_rt;
+    if (with_power) engine_policies |= engine_policy_power_spectra;
 
     /* Initialize the engine with the space and policies. */
     engine_init(&e, &s, params, output_options, N_total[swift_type_gas],
@@ -1480,9 +1496,9 @@ int main(int argc, char *argv[]) {
                 &entropy_floor, &gravity_properties, &stars_properties,
                 &black_holes_properties, &sink_properties, &neutrino_properties,
                 &neutrino_response, &feedback_properties, &pressure_floor_props,
-                &rt_properties, &mesh, &potential, &cooling_func, &starform,
-                &chemistry, &extra_io_props, &fof_properties, &los_properties,
-                &lightcone_array_properties, &ics_metadata);
+                &rt_properties, &mesh, &pow_data, &potential, &cooling_func,
+                &starform, &chemistry, &extra_io_props, &fof_properties,
+                &los_properties, &lightcone_array_properties, &ics_metadata);
     engine_config(/*restart=*/0, /*fof=*/0, &e, params, nr_nodes, myrank,
                   nr_threads, nr_pool_threads, with_aff, talking, restart_file);
 
@@ -1565,6 +1581,10 @@ int main(int argc, char *argv[]) {
         engine_fof(&e, /*dump_results=*/1, /*dump_debug=*/0,
                    /*seed_black_holes=*/0, /*buffers allocated=*/1);
       }
+
+      /* If we want power spectra, output them now as well */
+      if (with_power)
+        calc_all_power_spectra(e.power_data, e.s, &e.threadpool, e.verbose);
 
       engine_dump_snapshot(&e);
     }
@@ -1797,6 +1817,10 @@ int main(int argc, char *argv[]) {
                    /*seed_black_holes=*/0, /*buffers allocated=*/1);
       }
 
+      if (with_power) {
+        calc_all_power_spectra(e.power_data, e.s, &e.threadpool, e.verbose);
+      }
+
 #ifdef HAVE_VELOCIRAPTOR
       if (with_structure_finding && e.snapshot_invoke_stf &&
           !e.stf_this_timestep)
@@ -1853,6 +1877,7 @@ int main(int argc, char *argv[]) {
   if (with_feedback) feedback_clean(e.feedback_props);
   if (with_lightcone) lightcone_array_clean(e.lightcone_array_properties);
   if (with_rt) rt_clean(e.rt_props, restart);
+  if (with_power) power_clean(e.power_data);
   extra_io_clean(e.io_extra_props);
   engine_clean(&e, /*fof=*/0, restart);
   free(params);

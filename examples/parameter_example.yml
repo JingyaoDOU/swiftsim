@@ -164,6 +164,7 @@ Snapshots:
   delta_time: 0.01        # Time difference between consecutive outputs (in internal units)
   invoke_stf: 0           # (Optional) Call VELOCIraptor every time a snapshot is written irrespective of the VELOCIraptor output strategy.
   invoke_fof: 0           # (Optional) Call FOF every time a snapshot is written
+  invoke_ps:  0           # (Optional) Call a power-spectrum calculation every time a snapshot is written
   compression: 0          # (Optional) Set the level of GZIP compression of the HDF5 datasets [0-9]. 0 does no compression. The lossless compression is applied to *all* the fields.
   distributed: 0          # (Optional) When running over MPI, should each rank write a partial snapshot or do we want a single file? 1 implies one file per MPI rank.
   lustre_OST_count:  0    # (Optional) If > 0, the number of lustre OSTs to distribure the single-striped files over. Has no effect on non-Lustre filesystems. Has an effect only on distributed snapshots.
@@ -705,9 +706,6 @@ GEARRT:
     stellar_spectrum_blackbody_temperature_K: 1.e4    # (Conditional) if stellar_spectrum_type=1, use this temperature (in K) for the blackbody spectrum. 
     stars_max_timestep: -1.                           # (Optional) restrict the maximal timestep of stars to this value (in internal units). Set to negative to turn off.
 
-
-
-
 SPHM1RT:
     cred: 2.99792458e10                                 # value of reduced speed of light for the RT solver in code unit
     CFL_condition: 0.1                                  # CFL condition for RT, independent of hydro 
@@ -720,7 +718,15 @@ SPHM1RT:
     stellar_spectrum_blackbody_temperature_K: 1.e4    # (Conditional) if stellar_spectrum_type=1, use this temperature (in K) for the blackbody spectrum. 
     stars_max_timestep: -1.                           # (Optional) restrict the maximal timestep of stars to this value (in internal units). Set to negative to turn off.
 
+# Parameters related to power spectra --------------------------------------------
 
+PowerSpectrum:
+  grid_side_length: 256                          # Optional: size of the grid used in power spectrum calculation (default: 256)
+  num_folds: 6                                   # Number of foldings (1 means no foldings), determines the max k
+  fold_factor: 4                                 # Optional: factor by which to reduce the box along each side each folding (default: 4)
+  window_order: 3                                # Optional: order of the mass assignment scheme (default: 3, TSC)
+  requested_spectra: ["matter-matter","cdm-cdm","starBH-starBH","gas-matter","pressure-pressure","matter-pressure", "neutrino0-neutrino1"] # Array of strings indicating which components should be correlated for power spectra
+    
 
 # Parameters related to lightcones  -----------------------------------------------
 # Parameters in the LightconeCommon section apply to all lightcones but can be overridden in the LightconeX sections.
