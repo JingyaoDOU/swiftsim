@@ -2852,6 +2852,8 @@ int cell_unskip_rt_tasks(struct cell *c, struct scheduler *s, const int sub_cycl
   const int nodeID = e->nodeID;
   int rebuild = 0; /* TODO: implement rebuild conditions? */
 
+  if (c->cellID == 123) message("Caught cell %lld sub_cycle? %d active? %d activate advance cell time? %d", c->cellID, sub_cycle, cell_is_rt_active(c, e), c->hydro.rt_advance_cell_time != NULL);
+
   /* Note: we only get this far if engine_policy_rt is flagged. */
   if (!(e->policy & engine_policy_rt)) error("Unskipping RT tasks without RT");
 
@@ -3021,5 +3023,6 @@ int cell_unskip_rt_tasks(struct cell *c, struct scheduler *s, const int sub_cycl
     if (c->hydro.rt_advance_cell_time != NULL) scheduler_activate(s, c->hydro.rt_advance_cell_time);
     if (c->hydro.rt_out != NULL) scheduler_activate(s, c->hydro.rt_out);
   }
+
   return rebuild;
 }

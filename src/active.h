@@ -189,6 +189,7 @@ __attribute__((always_inline)) INLINE static int cell_is_active_hydro(
  * @brief Does a cell contain any particle finishing their RT time-step now ?
  * NOTE: this is used to check for activity while the tasks are running, but
  * not whether a task should be unskipped.
+ * TODO BEFORE MR: Check this comment
  *
  * @param c The #cell.
  * @param e The #engine containing information about the current time.
@@ -206,6 +207,7 @@ __attribute__((always_inline)) INLINE static int cell_is_rt_active(
         e->ti_current * e->time_base, e->cosmology->a, c->nodeID);
 #endif
 
+  /* if (c->cellID == 123) message("Cell %lld active check: %lld %lld %d", c->cellID, c->hydro.ti_rt_end_min, e->ti_current_subcycle, c->hydro.ti_rt_end_min == e->ti_current_subcycle); */
   return (c->hydro.ti_rt_end_min == e->ti_current_subcycle);
 }
 

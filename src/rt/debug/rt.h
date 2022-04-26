@@ -84,7 +84,7 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
   p->rt_data.debug_iact_stars_inject = 0;
   p->rt_data.debug_nsubcycles = 0;
   if (p->id == PROBLEM_ID || p->id == PROBLEM_ID2) {
-    message("resetting part %lld callloc=%d", p->id, callloc);
+    message("resetting nsubcycles part %lld callloc=%d", p->id, callloc);
   }
   p->rt_data.debug_kicked = 0;
 
@@ -160,7 +160,7 @@ rt_init_part_after_zeroth_step(struct part* restrict p,
 
   /* Reset number of subcycles here after zeroth step so kick count checks
    * get the correct data. */
-  p->rt_data.debug_nsubcycles = 0;
+  /* p->rt_data.debug_nsubcycles = 0; */
 }
 
 /**
@@ -416,6 +416,7 @@ __attribute__((always_inline)) INLINE static void rt_tchem(
   rt_debug_sequence_check(p, 4, __func__);
   p->rt_data.debug_thermochem_done += 1;
 
+  if (p->id == PROBLEM_ID) message("FINISHED PART %lld CYCLE %d", p->id, p->rt_data.debug_nsubcycles);
   /* rt_do_thermochemistry(p); */
 }
 

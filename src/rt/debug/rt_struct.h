@@ -74,7 +74,7 @@ struct rt_part_data {
 
   /* Subcycling flags */
 
-  /*! How many times was this particle subcycled this step */
+  /*! Current subcycle wrt (last) hydro step */
   int debug_nsubcycles;
 
   /*! Is this particle active in hydro in this main step? */
