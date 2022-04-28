@@ -34,6 +34,10 @@ The masses of all the particles are simply given by M/N.
 The script will also print out a guiding estimate of a good softening length to use, given by the radius
 of a sphere which contains on average one particle at the number density at the softening length a.
 
+NOTE: the positions of the particles produced by this script are centered at the origin, and must
+be shifted by some distance in x,y,z to be accepted by SWIFT. This will depend on the box size and
+the bound parameter described above.
+
 ## USAGE:
 Set the parameters described above as desired in plummerIC.py
 Run plummerIC.py to produce .hdf5 initial conditions
@@ -42,7 +46,3 @@ Run SWIFT with --self-gravity on
 
 To display results, another script (plotdensity.py) is provided. The basic usage is
 python3 plotdensity.py [path to snapshot files to plot (max 20)] -a [softening value] -M [mass value] -shift [shift applied in params.yml]
-
-NOTE: the positions of the particles produced by this script are centered at the origin, and must
-be shifted by some distance in x,y,z to be accepted by SWIFT. This will depend on the box size and
-the bound parameter described above.
