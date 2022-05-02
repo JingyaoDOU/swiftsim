@@ -12,6 +12,7 @@ parser.add_argument("-a",type=float,default=0.05,help="Softening length of theor
 parser.add_argument("-M",type=float,default=1.0e-5,help="Total Mass of theoretical model")
 parser.add_argument("-Rmin",type=float,default=0.005,help="Min Radius")
 parser.add_argument("-Rmax",type=float,default=0.3,help="Max Radius")
+parser.add_argument("-nbsamples",type=int,default=200,help="Number of radii to sample (bins)")
 parser.add_argument("-shift",type=float,default=2.0,help="Shift applied to particles in params.yml")
 
 args = parser.parse_args()
@@ -28,7 +29,7 @@ figsize = 7
 
 # Model Parameters (Mestel surface density)
 G = 4.299581e+04
-rsp = np.logspace(np.log10(args.Rmin),np.log10(args.Rmax),200)
+rsp = np.logspace(np.log10(args.Rmin),np.log10(args.Rmax),args.nbsamples)
 
 def plummer_analytical(r):
     return 3.*args.M/(4.*np.pi*args.a**3) * (1. + r**2/args.a**2)**(-2.5)

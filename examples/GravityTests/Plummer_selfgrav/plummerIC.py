@@ -31,7 +31,7 @@ M = 1.0e-5        # Total Mass [10^10 M_s]
 q = 1.0			  # Anisotropy Parameter (-inf,2]
 
 # IC File
-N = 1000000        # Number of Particles
+N = 500000        # Number of Particles
 bound = 2.0		  # Max distance to origin (exclude outliers)
 fname = 'plummer.hdf5' # Name of the ic file (dont forget .hdf5)
 pickle_ics = 0      # Optional: Pickle ics (pos,vel,mass) for future use
