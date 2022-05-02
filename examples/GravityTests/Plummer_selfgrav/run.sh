@@ -1,5 +1,4 @@
 #!/bin/bash
-export LANG=C:UTF-8
 if [ ! -e plummer.hdf5 ]
 then
     echo "Generating initial conditions for Plummer example..."

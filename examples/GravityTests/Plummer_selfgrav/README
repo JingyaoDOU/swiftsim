@@ -46,3 +46,5 @@ Run SWIFT with --self-gravity on
 
 To display results, another script (plotdensity.py) is provided. The basic usage is
 python3 plotdensity.py [path to snapshot files to plot (max 20)] -a [softening value] -M [mass value] -shift [shift applied in params.yml]
+
+A run with default values, 500k particles and subsequent density plotting can be automated with the provided run.sh script.
