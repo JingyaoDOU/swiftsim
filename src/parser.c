@@ -1241,8 +1241,6 @@ void parser_print_params(const struct swift_params *params) {
     printf("Parameter name: %s\n", params->data[i].name);
     printf("Parameter value: %s\n", params->data[i].value);
     printf("Parameter used: %i\n", params->data[i].used);
-    //printf("%s:%s %d\n", params->data[i].name, params->data[i].value,
-    //       params->data[i].used);
   }
 }
 
