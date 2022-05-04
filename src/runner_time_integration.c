@@ -789,8 +789,7 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
              * ti_rt_end == ti_current_subcyle, so we need to pretend we're past
              * ti_current_subcycle already. */
 
-            integertime_t ti_rt_end =
-                get_integer_time_end_mladen(ti_current_subcycle, p->rt_data.time_bin);
+            integertime_t ti_rt_end = get_integer_time_end(ti_current_subcycle, p->rt_data.time_bin);
             /* get_integer_time_end wil return ti_current if it is a viable
              * end time for this bin. Make sure that we increase the end time here. */
             if (ti_rt_end == ti_current_subcycle) ti_rt_end += get_integer_timestep(p->rt_data.time_bin);
