@@ -111,7 +111,7 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
     struct part* restrict p, const struct rt_props* restrict rt_props) {
 
   rt_init_part(p);
-  rt_reset_part(p, 0);
+  rt_reset_part(p);
   p->rt_data.debug_radiation_absorbed_tot = 0ULL;
 
   /* pretend particle is drifted during startup to pass checks*/

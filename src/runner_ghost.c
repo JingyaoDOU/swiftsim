@@ -1263,7 +1263,7 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
 
 #endif /* EXTRA_HYDRO_LOOP */
 
-            rt_reset_part(p, 2);
+            rt_reset_part(p);
 
             /* Ok, we are done with this particle */
             continue;
@@ -1426,7 +1426,7 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
 
 #endif /* EXTRA_HYDRO_LOOP */
 
-        rt_reset_part(p, 3);
+        rt_reset_part(p);
       }
 
       /* We now need to treat the particles whose smoothing length had not
