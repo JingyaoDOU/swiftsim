@@ -35,7 +35,6 @@
  */
 __attribute__((always_inline)) INLINE static void rt_debugging_count_subcycle(
     struct part *restrict p) {
-  if (p->id == PROBLEM_ID) message("Inc subcycle count %lld", p->id);
   p->rt_data.debug_nsubcycles += 1;
 }
 
@@ -148,13 +147,6 @@ static void rt_debugging_start_of_step_hydro_mapper(void *restrict map_data,
     p->rt_data.debug_rt_zeroth_cycle_on_main_step =
         part_is_rt_active(p, e) && part_is_active(p, e);
     /* Can't check for subcycle = 0 here, it hasn't been reset yet */
-    /* if (!p->rt_data.debug_rt_zeroth_cycle_on_main_step) */
-    /*     message("??? %d %d %d", part_is_active(p, e), part_is_rt_active(p,
-     * e), p->rt_data.debug_nsubcycles); */
-    if (p->id == PROBLEM_ID)
-      message("Testing part %lld - HA %d RA %d SC %d PTB %d RTTB %d", p->id,
-              part_is_active(p, e), part_is_rt_active(p, e),
-              p->rt_data.debug_nsubcycles, p->time_bin, p->rt_data.time_bin);
   }
 }
 

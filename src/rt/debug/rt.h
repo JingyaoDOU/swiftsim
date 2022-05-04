@@ -20,8 +20,6 @@
 #define SWIFT_RT_DEBUG_H
 
 #include "rt_debugging.h"
-/* #define PROBLEM_ID 1546 */
-#define PROBLEM_ID2 1147
 
 /**
  * @file src/rt/debug/rt.h
@@ -86,9 +84,6 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
    * number of subcycles. */
   rt_debugging_check_nr_subcycles(p);
   p->rt_data.debug_nsubcycles = 0;
-  if (p->id == PROBLEM_ID || p->id == PROBLEM_ID2) {
-    message("resetting nsubcycles part %lld callloc=%d", p->id, callloc);
-  }
   p->rt_data.debug_kicked = 0;
 }
 
@@ -414,8 +409,6 @@ __attribute__((always_inline)) INLINE static void rt_tchem(
   rt_debug_sequence_check(p, 4, __func__);
   p->rt_data.debug_thermochem_done += 1;
 
-  if (p->id == PROBLEM_ID)
-    message("FINISHED PART %lld CYCLE %d", p->id, p->rt_data.debug_nsubcycles);
   /* rt_do_thermochemistry(p); */
 }
 
@@ -439,12 +432,9 @@ __attribute__((always_inline)) INLINE static void rt_kick_extra(
   /* Don't account for timestep_sync backward kicks */
   if (dt_therm >= 0.f && dt_grav >= 0.f && dt_hydro >= 0.f &&
       dt_kick_corr >= 0.f) {
+
     rt_debug_sequence_check(p, 0, __func__);
     p->rt_data.debug_kicked += 1;
-
-    if (p->id == PROBLEM_ID || p->id == PROBLEM_ID2) {
-      message("Kicking part %lld count=%d", p->id, p->rt_data.debug_kicked);
-    }
   }
 }
 

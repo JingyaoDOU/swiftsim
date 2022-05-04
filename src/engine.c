@@ -1935,7 +1935,7 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
 
   /* Run the 0th time-step */
   TIMER_TIC2;
-  engine_launch(e, "tasks zeroth step");
+  engine_launch(e, "tasks");
   TIMER_TOC2(timer_runners);
 
 #ifdef SWIFT_HYDRO_DENSITY_CHECKS
@@ -2241,21 +2241,14 @@ void engine_step(struct engine *e) {
   if (e->restarting) space_rebuild(e->s, 0, e->verbose);
 
   /* Move forward in time */
-  /* NEED THIS EVEN WITHOUT SUBCYCLING */
   e->ti_old = e->ti_current;
-
-  message("Updating ti_current from %lld to %lld", e->ti_current,
-          e->ti_end_min);
-  e->ti_current_subcycle = e->ti_end_min;
-
   e->ti_current = e->ti_end_min;
+  e->ti_current_subcycle = e->ti_end_min;
   e->max_active_bin = get_max_active_bin(e->ti_end_min);
   e->min_active_bin = get_min_active_bin(e->ti_current, e->ti_old);
   e->step += 1;
   engine_current_step = e->step;
   e->step_props = engine_step_prop_none;
-  message("FOR NEW STEP: MIN BIN %d MAX BIN: %d", e->min_active_bin,
-          e->max_active_bin);
 
   /* When restarting, move everyone to the current time. */
   if (e->restarting) engine_drift_all(e, /*drift_mpole=*/1);
@@ -2574,6 +2567,8 @@ void engine_step(struct engine *e) {
       nr_rt_cycles, e->ti_current, e->ti_end_min, rt_step_size);
   fflush(stdout);
 
+  /* Note: zeroth sub-cycle already happened during the regular tasks,
+   * so we need to do one less than that. */
   for (int sub_cycle = 0; sub_cycle < nr_rt_cycles - 1; ++sub_cycle) {
 
     // e->ti_old = e->ti_current;
@@ -2602,8 +2597,6 @@ void engine_step(struct engine *e) {
   /* TODO: move rt_updates reset somewhere else later */
   e->rt_updates = 0ll;
 
-  message("------------------ end cycles");
-
 #ifdef WITH_CSDS
   if (e->policy & engine_policy_csds && e->verbose)
     message("The CSDS currently uses %f GB of storage",
@@ -2631,10 +2624,7 @@ void engine_step(struct engine *e) {
 #ifdef SWIFT_RT_DEBUG_CHECKS
   /* if we're running the debug RT scheme, do some checks after every step.
    * Do this after the output so we can safely reset debugging checks now. */
-  /* Do this after the file dump to properly reset the p->debug_drift counters.
-   */
   if (e->policy & engine_policy_rt) {
-    message("RUNNING RT DEBUGGING CHECKS END OF STEP");
     rt_debugging_checks_end_of_step(e, e->verbose);
   }
 #endif
@@ -2646,8 +2636,6 @@ void engine_step(struct engine *e) {
 
   /* Time in ticks at the end of this step. */
   e->toc_step = getticks();
-
-  message("=====================================================");
 }
 
 /**
