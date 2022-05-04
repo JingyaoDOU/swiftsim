@@ -1101,7 +1101,7 @@ void runner_do_rt_advance_cell_time(struct runner *r, struct cell *c,
         runner_do_rt_advance_cell_time(r, c->progeny[k], 0);
   } else {
 #ifdef SWIFT_RT_DEBUG_CHECKS
-    /* Do some debugging stuff on active particles before 
+    /* Do some debugging stuff on active particles before
      * setting the cell time */
 
     struct part *restrict parts = c->hydro.parts;

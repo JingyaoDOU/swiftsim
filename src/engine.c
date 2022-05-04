@@ -1765,17 +1765,20 @@ void engine_get_max_ids(struct engine *e) {
  *
  * @param e The #engine
  **/
-void engine_run_rt_sub_cycles(struct engine* e){
+void engine_run_rt_sub_cycles(struct engine *e) {
 
   /* Do we have work to do? */
   if (!(e->policy & engine_policy_rt)) return;
-  /* TODO: 
-   * if (dont do subcycling) return; */
+    /* TODO:
+     * if (dont do subcycling) return; */
 
 #ifdef SWIFT_DEBUG_CHECKS
   /* Print info before it's gone */
-  message("step %6d cycle   0 (during regular tasks) min_active_bin=%2d max_active_bin=%2d rt_updates=%18lld", 
-          e->step, e->min_active_bin_subcycle, e->max_active_bin_subcycle, e->rt_updates);
+  message(
+      "step %6d cycle   0 (during regular tasks) min_active_bin=%2d "
+      "max_active_bin=%2d rt_updates=%18lld",
+      e->step, e->min_active_bin_subcycle, e->max_active_bin_subcycle,
+      e->rt_updates);
 #endif
 
   /* Move forward in time */
@@ -1788,7 +1791,7 @@ void engine_run_rt_sub_cycles(struct engine* e){
    * the time of the previous regular step to get how many subcycles
    * we need. */
   const int nr_rt_cycles = (e->ti_end_min - e->ti_old) / rt_step_size;
-  /* TODO: Add check that this doesn't exceed user-set max nr of 
+  /* TODO: Add check that this doesn't exceed user-set max nr of
    * subcycles later.*/
 
   /* Note: zeroth sub-cycle already happened during the regular tasks,
@@ -1799,11 +1802,11 @@ void engine_run_rt_sub_cycles(struct engine* e){
     integertime_t ti_subcycle_old = e->ti_current_subcycle;
     e->ti_current_subcycle = e->ti_current + sub_cycle * rt_step_size;
     e->max_active_bin_subcycle = get_max_active_bin(e->ti_current_subcycle);
-    e->min_active_bin_subcycle = get_min_active_bin(
-        e->ti_current_subcycle, ti_subcycle_old); 
+    e->min_active_bin_subcycle =
+        get_min_active_bin(e->ti_current_subcycle, ti_subcycle_old);
 
     /* think cosmology one day: needs adapting here */
-    if (e->policy & engine_policy_cosmology) 
+    if (e->policy & engine_policy_cosmology)
       error("Can't run RT subcycling with cosmology yet");
     e->time = e->ti_current_subcycle * e->time_base + e->time_begin;
     e->time_old =
@@ -1813,8 +1816,11 @@ void engine_run_rt_sub_cycles(struct engine* e){
     engine_unskip_sub_cycle(e);
     engine_launch(e, "cycles");
 #ifdef SWIFT_DEBUG_CHECKS
-    message("step %6d cycle %3d time=%13.6e     min_active_bin=%d max_active_bin=%d rt_updates=%18lld", e->step, sub_cycle,
-            e->time, e->min_active_bin_subcycle, e->max_active_bin_subcycle, e->rt_updates);
+    message(
+        "step %6d cycle %3d time=%13.6e     min_active_bin=%d "
+        "max_active_bin=%d rt_updates=%18lld",
+        e->step, sub_cycle, e->time, e->min_active_bin_subcycle,
+        e->max_active_bin_subcycle, e->rt_updates);
 #endif
   }
 
@@ -1824,7 +1830,6 @@ void engine_run_rt_sub_cycles(struct engine* e){
   /* e->ti_current = -1; we NEVER update e->ti_current */
   /* e->max_active_bin = get_max_active_bin(e->ti_end_min); */
   /* e->min_active_bin = get_min_active_bin(e->ti_current, e->ti_old); */
-
 }
 
 /**
@@ -2267,8 +2272,9 @@ void engine_step(struct engine *e) {
   /* RT sub-cycling related time updates */
   /* TODO: does it fail if we set ti_current_subcycle == ti_rt_end_min?? */
   e->max_active_bin_subcycle = get_max_active_bin(e->ti_end_min);
-  e->min_active_bin_subcycle = get_min_active_bin(e->ti_end_min, e->ti_current_subcycle); 
-  e->ti_current_subcycle = e->ti_end_min; 
+  e->min_active_bin_subcycle =
+      get_min_active_bin(e->ti_end_min, e->ti_current_subcycle);
+  e->ti_current_subcycle = e->ti_end_min;
 
   /* When restarting, move everyone to the current time. */
   if (e->restarting) engine_drift_all(e, /*drift_mpole=*/1);
@@ -2572,11 +2578,9 @@ void engine_step(struct engine *e) {
     error("Obtained a time-step of size 0");
 #endif
 
-
   /* Do the RT sub-cycling now. */
   /* TODO: add condition to skip this */
   engine_run_rt_sub_cycles(e);
-
 
 #ifdef WITH_CSDS
   if (e->policy & engine_policy_csds && e->verbose)
