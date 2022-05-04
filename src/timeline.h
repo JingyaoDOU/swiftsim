@@ -144,9 +144,13 @@ get_integer_time_end_mladen(integertime_t ti_current, timebin_t bin) {
     return 0;
   else {
     const integertime_t mod = ti_current % dti;
-    return ti_current - mod + dti;
+    if (mod == 0)
+      return ti_current;
+    else
+      return ti_current - mod + dti;
   }
 }
+
 /**
  * @brief Returns the highest active time bin at a given point on the time line.
  *

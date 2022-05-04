@@ -784,13 +784,18 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
           message(
               "Changing ti_rt_end_min? pID %lld | %lld %lld -> %lld | step "
               "%lld",
-              p->id, ti_rt_end_min, ti_current_subcycle + ti_rt_new_step,
+              p->id, 
+              ti_rt_end_min, ti_current_subcycle + ti_rt_new_step,
               min(ti_current_subcycle + ti_rt_new_step, ti_rt_end_min),
-              ti_new_step);
+              ti_rt_new_step);
         ti_rt_end_min =
             min(ti_current_subcycle + ti_rt_new_step, ti_rt_end_min);
         ti_rt_beg_max =
             max(ti_current_subcycle + ti_rt_new_step, ti_rt_beg_max);
+        if (c->cellID == PROBLEM_CELL)
+          message(
+              "Changing ti_rt_min_step_size? pID %lld | %lld %lld -> %lld ",
+              p->id, ti_rt_min_step_size, ti_rt_new_step, min(ti_rt_min_step_size, ti_rt_new_step));
         ti_rt_min_step_size = min(ti_rt_min_step_size, ti_rt_new_step);
 
         /* What is the next starting point for this cell ? */
@@ -835,67 +840,6 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
              * ti_rt_end == ti_current_subcyle, so we need to pretend we're past
              * ti_current_subcycle already. */
 
-            /* TODO: this is to figure out why I need + 1 */
-            if (c->cellID == PROBLEM_CELL) {
-              /* get_integer_time_end(integertime_t ti_current, timebin_t bin) {
-               */
-              integertime_t dti = get_integer_timestep(p->rt_data.time_bin);
-              if (dti > 0) {
-                message(
-                    "Cell %8lld Part %8lld inactive Computing RT "
-                    "integer_time_end   ; dti=%20lld ti_curr/dti %lf ceil %lf "
-                    "res %lf res_int %20lld",
-                    c->cellID, p->id, dti,
-                    (double)ti_current_subcycle / (double)dti,
-                    ceil((double)ti_current_subcycle / (double)dti),
-                    dti * ceil((double)ti_current_subcycle / (double)dti),
-                    (integertime_t)(
-                        dti * ceil((double)ti_current_subcycle / (double)dti)));
-                message(
-                    "Cell %8lld Part %8lld inactive Computing RT "
-                    "integer_time_end+1 ; dti=%20lld ti_curr/dti %lf ceil %lf "
-                    "res %lf res_int %20lld",
-                    c->cellID, p->id, dti,
-                    (double)(ti_current_subcycle + (integertime_t)1) /
-                        (double)dti,
-                    ceil((double)(ti_current_subcycle + (integertime_t)1) /
-                         (double)dti),
-                    dti *
-                        ceil((double)(ti_current_subcycle + (integertime_t)1) /
-                             (double)dti),
-                    (integertime_t)(dti * ceil((double)(ti_current_subcycle +
-                                                        (integertime_t)1) /
-                                               (double)dti)));
-                message(
-                    "Cell %8lld Part %8lld inactive Computing RT "
-                    "integer_time_end+2 ; dti=%20lld ti_curr/dti %lf ceil %lf "
-                    "res %lf res_int %20lld",
-                    c->cellID, p->id, dti,
-                    (double)(ti_current_subcycle + (integertime_t)2) /
-                        (double)dti,
-                    ceil((double)(ti_current_subcycle + (integertime_t)2) /
-                         (double)dti),
-                    dti *
-                        ceil((double)(ti_current_subcycle + (integertime_t)2) /
-                             (double)dti),
-                    (integertime_t)(dti * ceil((double)(ti_current_subcycle +
-                                                        (integertime_t)2) /
-                                               (double)dti)));
-              }
-              dti = get_integer_timestep(p->time_bin);
-              if (dti > 0) {
-                message(
-                    "Cell %8lld Part %8lld inactive Computing hydro "
-                    "integer_time_end; dti=%20lld ti_curr/dti %lf ceil %lf res "
-                    "%lf res_int %20lld",
-                    c->cellID, p->id, dti, (double)ti_current / (double)dti,
-                    ceil((double)ti_current / (double)dti),
-                    dti * ceil((double)ti_current / (double)dti),
-                    (integertime_t)(dti *
-                                    ceil((double)ti_current / (double)dti)));
-              }
-            }
-
             /* const integertime_t dti_half = c->hydro.ti_rt_min_step_size / 2;
              */
             /* const integertime_t ti_rt_end = */
@@ -906,18 +850,25 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
             /* const integertime_t ti_rt_end =  */
             /*   get_integer_time_end(ti_current_subcycle + dti_half,
              * p->rt_data.time_bin); */
-            const integertime_t ti_rt_end =
+            integertime_t ti_rt_end =
                 /* get_integer_time_end(ti_current_subcycle + 1,
                    p->rt_data.time_bin); */
                 get_integer_time_end_mladen(ti_current_subcycle,
                                             p->rt_data.time_bin);
+            if (ti_rt_end == ti_current_subcycle) ti_rt_end += get_integer_timestep(p->rt_data.time_bin);
+
             const integertime_t ti_rt_beg = get_integer_time_begin(
                 ti_current_subcycle + 1, p->rt_data.time_bin);
 
             ti_rt_end_min = min(ti_rt_end, ti_rt_end_min);
             ti_rt_beg_max = max(ti_rt_beg, ti_rt_beg_max);
-            ti_rt_min_step_size =
-                min(c->hydro.ti_rt_min_step_size, ti_rt_min_step_size);
+            /* We mustn't update it here, since the RT time step sizes
+             * don't change for particles when they are inactive. Leaving
+             * them here effectively prohibits them from ever increasing
+             * again. Instead, if we're working on a cell where each particle
+             * is inactive, do an appropriate check at the end. */
+            /* ti_rt_min_step_size = */
+            /*     min(c->hydro.ti_rt_min_step_size, ti_rt_min_step_size); */
           }
 
           if (p->gpart != NULL) {

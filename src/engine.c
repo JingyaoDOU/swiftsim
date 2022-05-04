@@ -2570,8 +2570,8 @@ void engine_step(struct engine *e) {
       rt_step_size > 0 ? (e->ti_end_min - e->ti_old) / rt_step_size : 0;
   message(
       "============= STARTING CYCLES. NR cycles: %d | current %lld end_min "
-      "%lld",
-      nr_rt_cycles, e->ti_current, e->ti_end_min);
+      "%lld dt=%lld",
+      nr_rt_cycles, e->ti_current, e->ti_end_min, rt_step_size);
   fflush(stdout);
 
   for (int sub_cycle = 0; sub_cycle < nr_rt_cycles - 1; ++sub_cycle) {
