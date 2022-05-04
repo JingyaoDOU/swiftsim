@@ -46,14 +46,15 @@ rt_debugging_check_nr_subcycles(struct part *restrict p) {
   /* TODO: this check may fail when running with limiter/sync. */
 
   int bindiff = p->time_bin - p->rt_data.time_bin;
-  int subcycles_expect = 1;
-  for (int b = 0; b < bindiff; b++) subcycles_expect *= 2;
+  if (bindiff != 3) error("Particle %lld Got bindiff = %d", p->id, bindiff);
+  int subcycles_expect = (1 << bindiff);
   if (p->rt_data.debug_nsubcycles != subcycles_expect)
     error(
         "Particle %lld didn't do the expected amount of subcycles: Expected "
         "%d, done %d; time bins %d RT: %d",
         p->id, subcycles_expect, p->rt_data.debug_nsubcycles, p->time_bin,
         p->rt_data.time_bin);
+  if (p->rt_data.debug_nsubcycles != 8) message("Oh no?");
 }
 
 /**
