@@ -68,9 +68,12 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
     const float r2, float *dx, const float hi, const float hj,
     struct spart *restrict si, struct part *restrict pj, float a, float H) {
 
-  /* If the star doesn't have any neighbours, we have nothing to do here. */
+  /* If the star doesn't have any neighbours, we
+   * have nothing to do here. */
   if (si->density.wcount == 0.f) return;
 
+  /* Do some checks and increase neighbour counts
+   * before other potential early exits */
   if (si->rt_data.debug_iact_hydro_inject_prep == 0)
     error(
         "Injecting energy from star that wasn't called during injection prep");
@@ -106,9 +109,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_flux_common(
     struct part *restrict pj, float a, float H, int mode) {
 
   const char *func_name = (mode == 1) ? "sym flux iact" : "nonsym flux iact";
-
   rt_debug_sequence_check(pi, 3, func_name);
-
   pi->rt_data.debug_calls_iact_transport_interaction += 1;
 
   if (mode == 1) {
