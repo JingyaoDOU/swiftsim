@@ -51,8 +51,7 @@ rt_compute_stellar_emission_rate(struct spart* restrict sp, double time,
   sp->rt_data.debug_emission_rate_set += 1;
 
   /* rt_set_stellar_emission_rate(sp, star_age_begin_of_step, star_age,
-   * rt_props, */
-  /*                              phys_const, internal_units); */
+   *                              rt_props, phys_const, internal_units); */
 }
 
 /**
@@ -66,16 +65,16 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
     struct part* restrict p) {}
 
 /**
- * @brief Reset of the RT hydro particle data not related to the density.
+ * @brief Reset the RT hydro particle data not related to the hydro density.
  * Note: during initalisation (space_init), rt_reset_part and rt_init_part
  * are both called individually. Also an extra call to rt_reset_part is made
- * in space_convert_rt_quantities_after_zeroth_step().
- * TODO: update documentation for rt_reset_part_each_subcycle
+ * in space_convert_rt_quantities_after_zeroth_step(). To reset RT data needed
+ * in each RT sub-cycle, use rt_reset_part_each_subcycle().
  *
  * @param p the particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_reset_part(
-    struct part* restrict p, int callloc) {
+    struct part* restrict p) {
 
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
@@ -88,11 +87,7 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
 }
 
 /**
- * @brief Reset of the RT hydro particle data not related to the density.
- * Note: during initalisation (space_init), rt_reset_part and rt_init_part
- * are both called individually. Also an extra call to rt_reset_part is made
- * in space_convert_rt_quantities_after_zeroth_step().
- * TODO: update documentation for rt_reset_part_each_subcycle
+ * @brief Reset RT particle data which needs to be reset each sub-cycle.
  *
  * @param p the particle to work on
  */
@@ -135,26 +130,16 @@ __attribute__((always_inline)) INLINE static void
 rt_init_part_after_zeroth_step(struct part* restrict p,
                                const struct rt_props* rt_props) {
 
-  /* If we're running with debugging checks on, reset debugging
-   * counters and flags in particular after the zeroth step so
-   * that the checks work as intended. */
-  /* TODO BEFORE MR: clean this up */
-  /* rt_init_part(p); */
-  /* rt_reset_part(p, 1); */
   /* Since the inject_prep has been moved to the density loop, the
-   * initialization at startup is messing with the total counters for stars
-   * because the density is called, but not the force-and-kick tasks. So reset
-   * the total counters here as well so that they will match the star counters.
-   */
+   * initialization at startup is messing with the total counters
+   * for stars because the density is called, but not the force-and-kick
+   * tasks. So reset the total counters here as well so that they will
+   * match the star counters. */
   p->rt_data.debug_iact_stars_inject = 0;
   p->rt_data.debug_radiation_absorbed_tot = 0ULL;
   /* We pretended everything was drifted during the initialization, now put it
    * back into the proper state. (see rt_first_init_part)*/
   p->rt_data.debug_drifted = 0;
-
-  /* Reset number of subcycles here after zeroth step so kick count checks
-   * get the correct data. */
-  /* p->rt_data.debug_nsubcycles = 0; */
 }
 
 /**
