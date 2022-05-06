@@ -36,6 +36,7 @@
 #include "cell_black_holes.h"
 #include "cell_grav.h"
 #include "cell_hydro.h"
+#include "cell_rt.h"
 #include "cell_sinks.h"
 #include "cell_stars.h"
 #include "kernel_hydro.h"
@@ -114,9 +115,6 @@ struct pcell {
 
     /*! Minimal integer end-of-timestep in this cell for hydro tasks */
     integertime_t ti_end_min;
-
-    /*! Minimal integer end-of-timestep in this cell for RT tasks */
-    integertime_t ti_rt_end_min;
 
     /*! Maximal integer beginning-of-timestep in this cell for hydro tasks */
     integertime_t ti_beg_max;
@@ -212,6 +210,14 @@ struct pcell {
 
   } sinks;
 
+  /*! RT variables */
+  struct {
+
+    /*! Minimal integer end-of-timestep in this cell for RT tasks */
+    integertime_t ti_rt_end_min;
+
+  } rt;
+
   /*! Maximal depth in that part of the tree */
   int maxdepth;
 
@@ -234,9 +240,6 @@ struct pcell_step {
 
     /*! Minimal integer end-of-timestep in this cell (hydro) */
     integertime_t ti_end_min;
-
-    /*! Minimal integer end-of-timestep in this cell (rt) */
-    integertime_t ti_rt_end_min;
 
     /*! Maximal distance any #part has travelled since last rebuild */
     float dx_max_part;
@@ -265,6 +268,13 @@ struct pcell_step {
     /*! Maximal distance any #part has travelled since last rebuild */
     float dx_max_part;
   } black_holes;
+
+  struct {
+
+    /*! Minimal integer end-of-timestep in this cell (rt) */
+    integertime_t ti_rt_end_min;
+
+  } rt;
 };
 
 /**
@@ -374,6 +384,9 @@ struct cell {
 
   /*! Sink particles variables */
   struct cell_sinks sinks;
+
+  /*! Radiative transfer variables */
+  struct cell_rt rt;
 
 #ifdef WITH_MPI
   /*! MPI variables */
