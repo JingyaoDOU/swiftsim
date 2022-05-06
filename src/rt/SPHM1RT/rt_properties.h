@@ -202,14 +202,6 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   /* Better safe than sorry */
   if (rtp->stars_max_timestep == 0.f)
     error("You are restricting star time step to 0. That's a no-no.");
-
-  /* After initialisation, print params to screen */
-  rt_props_print(rtp);
-
-  /* Print a final message. */
-  if (engine_rank == 0) {
-    message("Radiative transfer initialized");
-  }
 }
 
 /**
