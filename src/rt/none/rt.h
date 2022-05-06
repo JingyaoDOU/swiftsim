@@ -68,6 +68,7 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
  * in each RT sub-cycle, use rt_reset_part_each_subcycle().
  *
  * @param p Particle to work on
+ * @param rt_props the RT properties struct
  */
 __attribute__((always_inline)) INLINE static void rt_reset_part(
     struct part* restrict p) {}
