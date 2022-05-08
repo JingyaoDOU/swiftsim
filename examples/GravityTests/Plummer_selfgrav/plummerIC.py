@@ -44,7 +44,7 @@ nb_threads = 6  # Set to None to use os.cpucount()
 
 ### Print parameters
 print('\n############################################################################################# \n')
-print('Generating Plummer Sphere with the following parameters::\n')
+print('Generating Plummer ICs with the following parameters::\n')
 print('Softening length:                                  a = ' + "{:.3e} kpc".format(a))
 print('Total Mass:                                        M = ' + "{:.3e} Solar Masses".format(M*1e10))
 print('Anisotropy parameter:                              q = ' + str(q))
@@ -180,7 +180,7 @@ V = np.array([v_x,v_y,v_z]).transpose()
 m = M/N * np.ones(N)
 
 ### Exclude extreme outliers
-idx = np.sqrt(np.sum(X**2,1)) < bound
+idx = r_rand < bound
 X = X[idx]
 V = V[idx]
 m = m[idx]
