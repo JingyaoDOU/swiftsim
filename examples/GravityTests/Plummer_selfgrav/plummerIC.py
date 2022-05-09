@@ -22,25 +22,41 @@ from scipy.optimize import minimize
 import time
 import h5py
 import write_gadget as wg
+import argparse
+
+parser = argparse.ArgumentParser(description="Generate discrete realization of Anisotropic Plummer Model")
+
+# Parse Main Arguments
+parser.add_argument("-a",type=float,default=0.05,help="Softening Length (in kpc)")
+parser.add_argument("-M",type=float,default=1.0e-5,help="Total Mass of Model (in 10^10 solar masses)")
+parser.add_argument("-q",type=float,default=1.0,help="Anisotropy parameter (between -inf and +2)")
+parser.add_argument("-N",type=int,default=1e4,help="Number of particles in the simulation")
+parser.add_argument("-bound",type=float,default=2.0,help="Upper bound of radius sampling")
+parser.add_argument("-boxsize",type=float,default=4.0,help="Box Size of simulation")
+parser.add_argument("--noparallel",action='store_false',help="Do not use multiprocessing library (default: false)")
+parser.add_argument("-nbthreads",type=int,default=6,help="Number of threads to use for multiprocessing (default: 6)")
+
+args = parser.parse_args()
+if args.q > 2.0: raise ValueError("Anisotropy parameter must be smaller than 2.0 (q = {:.2f} given)".format(args.q))
 
 #### Parameters
 # Plummer Model
-G = 4.299581e+04  # Gravitational constant [kpc / 10^10 M_s * (kms)^2]
-a = 0.05          # Plummer softening length [kpc]
-M = 1.0e-5        # Total Mass [10^10 M_s]
-q = 1.0			  # Anisotropy Parameter (-inf,2]
+G = 4.299581e+04       # Gravitational constant [kpc / 10^10 M_s * (kms)^2]
+a = args.a             # Plummer softening length [kpc]
+M = args.M             # Total Mass [10^10 M_s]
+q = args.q		       # Anisotropy Parameter (-inf,2]
 
 # IC File
-N = 500000        # Number of Particles
-bound = 2.0		  # Max distance to origin (exclude outliers)
+N = int(args.N)        # Number of Particles
+bound = args.bound     # Max distance to origin (exclude outliers)
 fname = 'plummer.hdf5' # Name of the ic file (dont forget .hdf5)
-pickle_ics = 0      # Optional: Pickle ics (pos,vel,mass) for future use
-box_size = 4.0
+pickle_ics = 0         # Optional: Pickle ics (pos,vel,mass) for future use
+box_size = args.boxsize
 periodic_bdry = 0
 
 # Parallelism for velocity sampling
-use_parallel = True
-nb_threads = 6  # Set to None to use os.cpucount()
+use_parallel = args.noparallel
+nb_threads = int(args.nbthreads)  # Set to None to use os.cpucount()
 
 ### Print parameters
 print('\n############################################################################################# \n')
@@ -60,7 +76,6 @@ print('Recommended Softening length (times conventional factor): ' + "{:.4e}".fo
 # Inverse transform sampling from analytical inverse of M(<r)
 def r_of_m(m,a,M):
     return a * ((M/m)**(2./3.) - 1)**(-1./2.)
-
 m_rand = M*np.random.uniform(0.0,1.0,N)
 r_rand = r_of_m(m_rand,a,M)
 phi_rand = np.random.uniform(0.0,2*np.pi,N)

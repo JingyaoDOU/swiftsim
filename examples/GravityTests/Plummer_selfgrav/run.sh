@@ -5,8 +5,8 @@ then
     python3 plummerIC.py
 fi
 
-../../swift --self-gravity --threads=6 params.yml 2>&1 | tee output.log
+../../swift --self-gravity --threads=8 params.yml 2>&1 | tee output.log
 
 echo "Plotting results..."
-# If params.yml is left at default values, should produce 100 snapshots -> Plot 0,10,20,...100
-python3 plotdensity.py output_00*0.hdf5
+# If params.yml is left at default values, should produce 10 snapshots
+python3 plotdensity.py snap/output_*.hdf5
