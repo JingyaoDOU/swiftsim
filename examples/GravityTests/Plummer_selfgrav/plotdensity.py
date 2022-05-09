@@ -1,8 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from read_snapshot import *
 import argparse
 from scipy.optimize import curve_fit
+import h5py
 
 # Parse user input
 parser = argparse.ArgumentParser(description="Plot multiple density profiles against theoretical prediction")
@@ -38,13 +38,13 @@ def plummer_analytical(r):
 fig, ax = plt.subplots(figsize=(1.2*figsize,figsize))
 for fname in fnames:
     print(fname)
-    sn = snapshot(fname)
-    pos = sn.pos - args.shift
+    f = h5py.File(fname,'r')
+    pos = np.array(f['DMParticles']['Coordinates']) - args.shift
+    time = f['Header'].attrs['Time'][0]*f['Units'].attrs['Unit time in cgs (U_t)'][0] / 31557600.e9
+    mass = np.array(f['DMParticles']['Masses'])
     x = pos[:,0]
     y = pos[:,1]
     r = np.sqrt(np.sum(pos**2,1))
-    time = sn.time_Myr()
-    mass = sn.mass
     
     # Methods to compute density profile
     def mass_ins(R):
@@ -55,10 +55,9 @@ for fname in fnames:
         return np.diff(mass_ins_vect(R)) / np.diff(R) / (4.*np.pi*R[1:]**2)
     
     # Plot
-    ax.loglog(rsp[1:],density(rsp),'o',ms=1.7,label=r'$t=$ {:.3f} Gyr'.format(sn.time_Gyr()))
+    ax.loglog(rsp[1:],density(rsp),'o',ms=1.7,label=r'$t=$ {:.3f} Gyr'.format(time))
 
-fitstr = 'Analytical Prediction'
-ax.plot(rsp,plummer_analytical(rsp),c='black',label=fitstr)
+ax.plot(rsp,plummer_analytical(rsp),c='black',label='Analytical Prediction')
 ax.set_xlabel('r [kpc]')
 ax.legend()
 ax.set_title(r'Plummer Density Profile: $a = {:.1e}$ kpc, $M = {:.1e}$ M$_{{\odot}}$'.format(args.a,args.M*1e10))
