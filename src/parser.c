@@ -1268,10 +1268,11 @@ void parser_write_params_to_file(const struct swift_params *params,
     fprintf(file, "# SWIFT used parameter file\n");
   else
     fprintf(file, "# SWIFT unused parameter file\n");
-  fprintf(file, "# Code version: %s\n", package_version());
+  fprintf(file, "# code version: %s\n", package_version());
   fprintf(file, "# git revision: %s\n", git_revision());
   fprintf(file, "# git branch: %s\n", git_branch());
   fprintf(file, "# git date: %s\n", git_date());
+  fprintf(file, "# current date: %s\n", clocks_now(1 /* swift */));
 
   /* Flags to track which parameters are written. */
   int *written = (int *)calloc(params->paramCount, sizeof(int));

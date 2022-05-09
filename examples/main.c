@@ -1614,19 +1614,18 @@ int main(int argc, char *argv[]) {
     if (restart) {
 
       /* The used parameters can change, so try to track that. */
-      struct swift_params *tmp =
-          (struct swift_params *)malloc(sizeof(struct swift_params));
-      memcpy(tmp, params, sizeof(struct swift_params));
-      int changed = parser_compare_params(refparams, tmp);
-      if (changed > 0) {
-        char pname[64];
-        sprintf(pname, "%s.%d", usedname, e.step);
-        parser_write_params_to_file(tmp, pname, /*used=*/1);
-      }
-      free(tmp);
+      struct swift_params tmp;
+      memcpy(&tmp, params, sizeof(struct swift_params));
+      parser_compare_params(refparams, &tmp);
+
+      /* We write a file, even if nothing has changed. */
+      char pname[64];
+      sprintf(pname, "%s.%d", usedname, e.step);
+      parser_write_params_to_file(&tmp, pname, /*used=*/1);
 
     } else {
-      /* Just write the usual used and unused files. */
+
+      /* Write the fully populated used and unused files. */
       parser_write_params_to_file(params, usedname, /*used=*/1);
       parser_write_params_to_file(params, unusedname, /*used=*/0);
     }
