@@ -249,6 +249,10 @@ struct pow_mapper_data {
   double jfac;
 };
 
+/**
+ * @brief Decided whether or not a given particle should be considered or
+ * not for the specific #power_type we are computing.
+ */
 int should_collect_mass(const enum power_type type, const struct gpart* gp,
                         const integertime_t ti_current) {
 
@@ -278,7 +282,9 @@ int should_collect_mass(const enum power_type type, const struct gpart* gp,
       return random_unit_interval(gp->id_or_neg_offset, ti_current,
                                   random_number_powerspectrum_split) >= 0.5;
   } else {
+#ifdef SWIFT_DEBUG_CHECKS
     error("Invalid type!");
+#endif
   }
 
   return 0;
