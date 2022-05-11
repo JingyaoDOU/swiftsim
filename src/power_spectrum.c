@@ -50,6 +50,31 @@
 #define power_data_default_window_order 3
 
 /**
+ * @brief Return the #power_type corresponding to a given string.
+ */
+enum power_type power_spectrum_get_type(const char* name) {
+  if (strcasecmp(name, "matter") == 0)
+    return pow_type_matter;
+  else if (strcasecmp(name, "cdm") == 0)
+    return pow_type_cdm;
+  else if (strcasecmp(name, "gas") == 0)
+    return pow_type_gas;
+  else if (strcasecmp(name, "starBH") == 0)
+    return pow_type_starBH;
+  else if (strcasecmp(name, "pressure") == 0)
+    return pow_type_pressure;
+  else if (strcasecmp(name, "neutrino") == 0)
+    return pow_type_neutrino;
+  else if (strcasecmp(name, "neutrino0") == 0)
+    return pow_type_neutrino_0;
+  else if (strcasecmp(name, "neutrino1") == 0)
+    return pow_type_neutrino_1;
+  else
+    error("Do not recognize the power spectrum type '%s'.", name);
+  return pow_type_count;
+}
+
+/**
  * @brief Initialize power spectra calculation.
  *
  * Reads in the power spectrum parameters, sets up FFTW
@@ -67,38 +92,31 @@ void power_init(struct power_spectrum_data* p, struct swift_params* params,
   p->Nfold = parser_get_param_int(params, "PowerSpectrum:num_folds");
   p->foldfac = parser_get_opt_param_int(params, "PowerSpectrum:fold_factor",
                                         power_data_default_fold_factor);
-  p->windoworder = (enum power_window)parser_get_opt_param_int(
+  p->windoworder = parser_get_opt_param_int(
       params, "PowerSpectrum:window_order", power_data_default_window_order);
 
-  char** requested_spectra;
-  parser_get_param_string_array(params, "PowerSpectrum:requested_spectra",
-                                &p->spectrumcount, &requested_spectra);
-
-  if (p->windoworder > 3) {
+  if (p->windoworder > 3 || p->windoworder < 1)
     error("Power spectrum calculation is not implemented for %dth order!",
           p->windoworder);
-  }
-
   if (p->windoworder == 1)
     message("WARNING: window order is recommended to be at least 2 (CIC).");
   if (p->windoworder <= 2 && p->foldfac > 4)
     message(
         "WARNING: fold factor is recommended not to exceed 4 for a "
         "mass assignment order of 2 (CIC) or below.");
-  else if (p->windoworder == 3 && p->foldfac > 6)
+  if (p->windoworder == 3 && p->foldfac > 6)
     message(
         "WARNING: fold factor is recommended not to exceed 6 for a "
         "mass assignment order of 3 (TSC) or below.");
 
-  int kcutn = 70;
-  if (p->windoworder >= 3) kcutn = 90;
+  /* Make sensible choices for the k-cuts */
+  const int kcutn = (p->windoworder >= 3) ? 90 : 70;
   const int kcutleft = (int)(p->Ngrid / 256.0 * kcutn);
   const int kcutright = (int)(p->Ngrid / 256.0 * (double)kcutn / p->foldfac);
-  if (kcutright < 10 || (kcutleft - kcutright) < 30) {
+  if (kcutright < 10 || (kcutleft - kcutright) < 30)
     error(
         "Combination of power grid size and fold factor do not allow for "
         "enough overlap between foldings!");
-  }
 
   p->nr_threads = nr_threads;
 
@@ -113,12 +131,16 @@ void power_init(struct power_spectrum_data* p, struct swift_params* params,
   message("Note that FFTW is not threaded!");
 #endif
 
-  /* Parse which spectra are being requested */
+  char** requested_spectra;
+  parser_get_param_string_array(params, "PowerSpectrum:requested_spectra",
+                                &p->spectrumcount, &requested_spectra);
+
   p->types1 =
       (enum power_type*)malloc(p->spectrumcount * sizeof(enum power_type));
   p->types2 =
       (enum power_type*)malloc(p->spectrumcount * sizeof(enum power_type));
 
+  /* Parse which spectra are being requested */
   for (int i = 0; i < p->spectrumcount; ++i) {
 
     char* pstr = strtok(requested_spectra[i], "-");
@@ -126,47 +148,15 @@ void power_init(struct power_spectrum_data* p, struct swift_params* params,
       error("Requested power spectra are not in the format type1-type2!");
     char type1[32];
     strcpy(type1, pstr);
+
     pstr = strtok(NULL, "-");
     if (pstr == NULL)
       error("Requested power spectra are not in the format type1-type2!");
     char type2[32];
     strcpy(type2, pstr);
-    if (strcasecmp(type1, "matter") == 0)
-      p->types1[i] = pow_type_matter;
-    else if (strcasecmp(type1, "cdm") == 0)
-      p->types1[i] = pow_type_cdm;
-    else if (strcasecmp(type1, "gas") == 0)
-      p->types1[i] = pow_type_gas;
-    else if (strcasecmp(type1, "starBH") == 0)
-      p->types1[i] = pow_type_starBH;
-    else if (strcasecmp(type1, "pressure") == 0)
-      p->types1[i] = pow_type_pressure;
-    else if (strcasecmp(type1, "neutrino") == 0)
-      p->types1[i] = pow_type_neutrino;
-    else if (strcasecmp(type1, "neutrino0") == 0)
-      p->types1[i] = pow_type_neutrino_0;
-    else if (strcasecmp(type1, "neutrino1") == 0)
-      p->types1[i] = pow_type_neutrino_1;
-    else
-      error("Do not recognize the power spectrum type '%s'.", type1);
-    if (strcasecmp(type2, "matter") == 0)
-      p->types2[i] = pow_type_matter;
-    else if (strcasecmp(type2, "cdm") == 0)
-      p->types2[i] = pow_type_cdm;
-    else if (strcasecmp(type2, "gas") == 0)
-      p->types2[i] = pow_type_gas;
-    else if (strcasecmp(type2, "starBH") == 0)
-      p->types2[i] = pow_type_starBH;
-    else if (strcasecmp(type2, "pressure") == 0)
-      p->types2[i] = pow_type_pressure;
-    else if (strcasecmp(type2, "neutrino") == 0)
-      p->types2[i] = pow_type_neutrino;
-    else if (strcasecmp(type2, "neutrino0") == 0)
-      p->types2[i] = pow_type_neutrino_0;
-    else if (strcasecmp(type2, "neutrino1") == 0)
-      p->types2[i] = pow_type_neutrino_1;
-    else
-      error("Do not recognize the power spectrum type '%s'.", type2);
+
+    p->types1[i] = power_spectrum_get_type(type1);
+    p->types2[i] = power_spectrum_get_type(type2);
   }
 
   /* Initialize the plan only once -- much faster for FFTs run often!
@@ -229,7 +219,7 @@ struct grid_mapper_data {
   double* dens;
   int N;
   enum power_type type;
-  enum power_window windoworder;
+  int windoworder;
   double fac;
   const struct engine* e;
   struct neutrino_model* nu_model;
@@ -252,7 +242,7 @@ struct pow_mapper_data {
   fftw_complex* powgridft;
   fftw_complex* powgridft2;
   int Ngrid;
-  enum power_window windoworder;
+  int windoworder;
   int* kbin;
   int* modecounts;
   double* powersum;
@@ -717,13 +707,13 @@ INLINE static void gpart_to_grid_NGP(const struct gpart* gp, double* rho,
  * @param N the size of the grid along one axis.
  * @param fac Conversion factor of wrapped position to grid.
  * @param type The #power_type we want to assign to the grid.
- * @param windoworder The #power_window to use for grid assignment.
+ * @param windoworder The window to use for grid assignment.
  * @param e The #engine.
  */
 void cell_to_powgrid(const struct cell* c, double* rho, const int N,
                      const double fac, const enum power_type type,
-                     const enum power_window windoworder,
-                     const struct engine* e, struct neutrino_model* nu_model) {
+                     const int windoworder, const struct engine* e,
+                     struct neutrino_model* nu_model) {
 
   const int gcount = c->grav.count;
   const struct gpart* gparts = c->grav.parts;
@@ -829,13 +819,13 @@ void cell_to_powgrid(const struct cell* c, double* rho, const int N,
 
     /* Assign the quantity to the grid */
     switch (windoworder) {
-      case window_ngp:
+      case 1:
         gpart_to_grid_NGP(&gparts[i], rho, N, fac, dim, quantity);
         break;
-      case window_cic:
+      case 2:
         gpart_to_grid_CIC(&gparts[i], rho, N, fac, dim, quantity);
         break;
-      case window_tsc:
+      case 3:
         gpart_to_grid_TSC(&gparts[i], rho, N, fac, dim, quantity);
         break;
       default:
@@ -863,7 +853,7 @@ void cell_to_powgrid_mapper(void* map_data, int num, void* extra) {
   double* grid = data->dens;
   const int Ngrid = data->N;
   const enum power_type type = data->type;
-  const enum power_window order = data->windoworder;
+  const int order = data->windoworder;
   const double gridfac = data->fac;
   const struct engine* e = data->e;
   struct neutrino_model* nu_model = data->nu_model;
@@ -929,7 +919,7 @@ void pow_from_grid_mapper(void* map_data, const int num, void* extra) {
   const int Ngrid = data->Ngrid;
   const int Nhalf = Ngrid / 2;
   const int nyq2 = Nhalf * Nhalf;
-  const enum power_window windoworder = data->windoworder;
+  const int windoworder = data->windoworder;
   const int* restrict kbin = data->kbin;
   const double jfac = data->jfac;
 
@@ -974,20 +964,7 @@ void pow_from_grid_mapper(void* map_data, const int num, void* extra) {
         double W = invsincx * invsincy * invsincz;
 
         /* W = W^windoworder */
-        switch (windoworder) {
-          case window_cic:
-            W *= W;
-            break;
-          case window_tsc:
-            W *= W * W;
-            break;
-          case window_pcs:
-            W *= W;
-            W *= W;
-            break;
-          default:
-            break;
-        }
+        W = integer_pow(W, windoworder);
 
         /* Avoid sqrt with a lookup table kbin[kk] (does cost more memory)
          * bin = (int)(sqrt(kk) + 0.5); */

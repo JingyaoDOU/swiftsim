@@ -49,16 +49,6 @@ enum power_type {
 } __attribute__((packed));
 
 /**
- * @brief The different mass assignment schemes we could use.
- */
-enum power_window {
-  window_ngp = 1,
-  window_cic = 2,
-  window_tsc = 3,
-  window_pcs = 4  // not implemented
-} __attribute__((packed));
-
-/**
  * @brief Data structure for power spectrum variables and parameters
  */
 struct power_spectrum_data {
@@ -79,9 +69,7 @@ struct power_spectrum_data {
   int spectrumcount;
 
   /*! The order of the mass assignment window */
-  // Could further improve de-aliasing by doing interlacing, but requires
-  // calculating the density grid twice
-  enum power_window windoworder;
+  int windoworder;
 
   /*! Array of component types to correlate on the "left" side */
   enum power_type* types1;
