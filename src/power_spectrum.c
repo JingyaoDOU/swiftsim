@@ -249,6 +249,41 @@ struct pow_mapper_data {
   double jfac;
 };
 
+int should_collect_mass(const enum power_type type, const struct gpart* gp,
+                        const integertime_t ti_current) {
+
+  if (type == pow_type_matter) {
+    /* Select all particles */
+    return 1;
+  } else if (type == pow_type_cdm) {
+    if (gp->type == swift_type_dark_matter ||
+        gp->type == swift_type_dark_matter_background)
+      return 1;
+  } else if (type == pow_type_gas) {
+    if (gp->type == swift_type_gas) return 1;
+  } else if (type == pow_type_starBH) {
+    if (gp->type == swift_type_stars || gp->type == swift_type_black_hole)
+      return 1;
+  } else if (type == pow_type_neutrino) {
+    if (gp->type == swift_type_neutrino) return 1;
+  } else if (type == pow_type_neutrino_0) {
+    if (gp->type == swift_type_neutrino) {
+      /* Randomly divide the neutrino ensemble in half */
+      return random_unit_interval(gp->id_or_neg_offset, ti_current,
+                                  random_number_powerspectrum_split) < 0.5;
+    }
+  } else if (type == pow_type_neutrino_1) {
+    if (gp->type == swift_type_neutrino)
+      /* Randomly divide the neutrino ensemble in half */
+      return random_unit_interval(gp->id_or_neg_offset, ti_current,
+                                  random_number_powerspectrum_split) >= 0.5;
+  } else {
+    error("Invalid type!");
+  }
+
+  return 0;
+}
+
 /**
  * @brief Calculates the necessary mass terms for shot noise.
  *
@@ -301,66 +336,15 @@ void shotnoiseterms(const struct cell* c, double* tot12,
 
       /* We are collecting a mass of some kind.
        * We skip any particle not matching the PS type we want */
-
-      if (type1 == pow_type_matter) {
-
-        /* Collect the mass of all particles --> don't skip anything */
-
-      } else if (type1 == pow_type_cdm) {
-
-        /* Collect the CDM mass --> skip everything else */
-        if (gparts[i].type != swift_type_dark_matter &&
-            gparts[i].type != swift_type_dark_matter_background)
-          continue;
-
-      } else if (type1 == pow_type_gas) {
-
-        /* Collect the gas mass --> skip everything else */
-        if (gparts[i].type != swift_type_gas) continue;
-
-      } else if (type1 == pow_type_starBH) {
-
-        /* Collect the gas mass --> skip everything else */
-        if (gparts[i].type != swift_type_stars &&
-            gparts[i].type != swift_type_black_hole)
-          continue;
-
-      } else if (type1 == pow_type_neutrino) {
-
-        /* Collect the neutrino mass --> skip everything else */
-        if (gparts[i].type != swift_type_neutrino) continue;
-
-      } else if (type1 == pow_type_neutrino_0) {
-
-        /* Collect the neutrino mass --> skip everything else */
-        if (gparts[i].type != swift_type_neutrino) continue;
-        /* Randomly divide the neutrino ensemble in half */
-        if (random_unit_interval(gparts[i].id_or_neg_offset, e->ti_current,
-                                 random_number_powerspectrum_split) >= 0.5)
-          continue;
-
-      } else if (type1 == pow_type_neutrino_1) {
-
-        /* Collect the neutrino mass --> skip everything else */
-        if (gparts[i].type != swift_type_neutrino) continue;
-        /* Randomly divide the neutrino ensemble in half */
-        if (random_unit_interval(gparts[i].id_or_neg_offset, e->ti_current,
-                                 random_number_powerspectrum_split) < 0.5)
-          continue;
-
-      } else {
-#ifdef SWIFT_DEBUG_CHECKS
-        error("Type not handled");
-#endif
-      }
+      if (!should_collect_mass(type1, &gparts[i], e->ti_current)) continue;
 
       /* Compute weight (for neutrino delta-f weighting) */
-      double weight = 1.0;
+      double weight1 = 1.0;
       if (gparts[i].type == swift_type_neutrino)
-        gpart_neutrino_weight_mesh_only(&gparts[i], nu_model, &weight);
+        gpart_neutrino_weight_mesh_only(&gparts[i], nu_model, &weight1);
 
       /* And eventually... collect */
-      quantity1 = gparts[i].mass * weight;
+      quantity1 = gparts[i].mass * weight1;
     }
 
     /* Can we assign already? (i.e. this is an auto-spectrum) */
@@ -371,7 +355,7 @@ void shotnoiseterms(const struct cell* c, double* tot12,
     }
 
     /* This is a cross-spectrum */
-    else if (type1 != type2) {
+    else {
 
       double quantity2;
 
@@ -389,58 +373,7 @@ void shotnoiseterms(const struct cell* c, double* tot12,
 
         /* We are collecting a mass of some kind.
          * We skip any particle not matching the PS type we want */
-
-        if (type2 == pow_type_matter) {
-
-          /* Collect the mass of all particles --> don't skip anything */
-
-        } else if (type2 == pow_type_cdm) {
-
-          /* Collect the CDM mass --> skip everything else */
-          if (gparts[i].type != swift_type_dark_matter &&
-              gparts[i].type != swift_type_dark_matter_background)
-            continue;
-
-        } else if (type2 == pow_type_gas) {
-
-          /* Collect the gas mass --> skip everything else */
-          if (gparts[i].type != swift_type_gas) continue;
-
-        } else if (type2 == pow_type_starBH) {
-
-          /* Collect the gas mass --> skip everything else */
-          if (gparts[i].type != swift_type_stars &&
-              gparts[i].type != swift_type_black_hole)
-            continue;
-
-        } else if (type2 == pow_type_neutrino) {
-
-          /* Collect the neutrino mass --> skip everything else */
-          if (gparts[i].type != swift_type_neutrino) continue;
-
-        } else if (type2 == pow_type_neutrino_0) {
-
-          /* Collect the neutrino mass --> skip everything else */
-          if (gparts[i].type != swift_type_neutrino) continue;
-          /* Randomly divide the neutrino ensemble in half */
-          if (random_unit_interval(gparts[i].id_or_neg_offset, e->ti_current,
-                                   random_number_powerspectrum_split) >= 0.5)
-            continue;
-
-        } else if (type2 == pow_type_neutrino_1) {
-
-          /* Collect the neutrino mass --> skip everything else */
-          if (gparts[i].type != swift_type_neutrino) continue;
-          /* Randomly divide the neutrino ensemble in half */
-          if (random_unit_interval(gparts[i].id_or_neg_offset, e->ti_current,
-                                   random_number_powerspectrum_split) < 0.5)
-            continue;
-
-        } else {
-#ifdef SWIFT_DEBUG_CHECKS
-          error("Type not handled");
-#endif
-        }
+        if (!should_collect_mass(type2, &gparts[i], e->ti_current)) continue;
 
         /* Compute weight (for neutrino delta-f weighting) */
         double weight2 = 1.0;
@@ -755,58 +688,7 @@ void cell_to_powgrid(const struct cell* c, double* rho, const int N,
 
       /* We are collecting a mass of some kind.
        * We skip any particle not matching the PS type we want */
-
-      if (type == pow_type_matter) {
-
-        /* Collect the mass of all particles --> don't skip anything */
-
-      } else if (type == pow_type_cdm) {
-
-        /* Collect the CDM mass --> skip everything else */
-        if (gparts[i].type != swift_type_dark_matter &&
-            gparts[i].type != swift_type_dark_matter_background)
-          continue;
-
-      } else if (type == pow_type_gas) {
-
-        /* Collect the gas mass --> skip everything else */
-        if (gparts[i].type != swift_type_gas) continue;
-
-      } else if (type == pow_type_starBH) {
-
-        /* Collect the gas mass --> skip everything else */
-        if (gparts[i].type != swift_type_stars &&
-            gparts[i].type != swift_type_black_hole)
-          continue;
-
-      } else if (type == pow_type_neutrino) {
-
-        /* Collect the neutrino mass --> skip everything else */
-        if (gparts[i].type != swift_type_neutrino) continue;
-
-      } else if (type == pow_type_neutrino_0) {
-
-        /* Collect the neutrino mass --> skip everything else */
-        if (gparts[i].type != swift_type_neutrino) continue;
-        /* Randomly divide the neutrino ensemble in half */
-        if (random_unit_interval(gparts[i].id_or_neg_offset, e->ti_current,
-                                 random_number_powerspectrum_split) >= 0.5)
-          continue;
-
-      } else if (type == pow_type_neutrino_1) {
-
-        /* Collect the neutrino mass --> skip everything else */
-        if (gparts[i].type != swift_type_neutrino) continue;
-        /* Randomly divide the neutrino ensemble in half */
-        if (random_unit_interval(gparts[i].id_or_neg_offset, e->ti_current,
-                                 random_number_powerspectrum_split) < 0.5)
-          continue;
-
-      } else {
-#ifdef SWIFT_DEBUG_CHECKS
-        error("Type not handled");
-#endif
-      }
+      if (!should_collect_mass(type, &gparts[i], e->ti_current)) continue;
 
       /* Compute weight (for neutrino delta-f weighting) */
       double weight = 1.0;
