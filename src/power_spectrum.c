@@ -39,6 +39,7 @@
 #include "minmax.h"
 #include "neutrino.h"
 #include "random.h"
+#include "row_major_id.h"
 #include "space.h"
 #include "threadpool.h"
 #include "tools.h"
@@ -171,9 +172,10 @@ void power_init(struct power_spectrum_data* p, struct swift_params* params,
   /* Initialize the plan only once -- much faster for FFTs run often!
      Does require us to allocate the grids, but we delete them right away */
   const int Ngrid = p->Ngrid;
-  // Grid is padded to allow for in-place FFT
+
+  /* Grid is padded to allow for in-place FFT */
   p->powgrid = fftw_alloc_real(Ngrid * Ngrid * (Ngrid + 2));
-  // Pointer to grid to interpret it as complex data
+  /* Pointer to grid to interpret it as complex data */
   p->powgridft = (fftw_complex*)p->powgrid;
 
   p->fftplanpow = fftw_plan_dft_r2c_3d(Ngrid, Ngrid, Ngrid, p->powgrid,
@@ -184,9 +186,10 @@ void power_init(struct power_spectrum_data* p, struct swift_params* params,
   p->powgridft = NULL;
 
   /* Do the same for a second grid/plan to allow for cross power */
-  // Grid is padded to allow for in-place FFT
+
+  /* Grid is padded to allow for in-place FFT */
   p->powgrid2 = fftw_alloc_real(Ngrid * Ngrid * (Ngrid + 2));
-  // Pointer to grid to interpret it as complex data
+  /* Pointer to grid to interpret it as complex data */
   p->powgridft2 = (fftw_complex*)p->powgrid2;
 
   p->fftplanpow2 = fftw_plan_dft_r2c_3d(Ngrid, Ngrid, Ngrid, p->powgrid2,
@@ -496,85 +499,106 @@ void shotnoise_mapper(void* map_data, int num, void* extra) {
   }
 }
 
-// Based on the same function from mesh_gravity.c, but with padding
-__attribute__((always_inline, const)) INLINE static int row_major_id_periodic(
-    const int i, const int j, const int k, const int N) {
-
-  // N+2 is because of padding
-  return ((((i + N) % N) * N + ((j + N) % N)) * (N + 2) + ((k + N) % N));
-}
-
 __attribute__((always_inline)) INLINE static void TSC_set(
     double* mesh, const int N, const int i, const int j, const int k,
     const double dx, const double dy, const double dz, const double value) {
 
-  const double lx = 0.5 * (0.5 - dx) * (0.5 - dx);  // left side, dist 1 + dx
-  const double mx = 0.75 - dx * dx;                 // center, dist |dx|
-  const double rx = 0.5 * (0.5 + dx) * (0.5 + dx);  // right side, dist 1 - dx
+  const double lx = 0.5 * (0.5 - dx) * (0.5 - dx); /* left side, dist 1 + dx  */
+  const double mx = 0.75 - dx * dx;                /* center, dist |dx|  */
+  const double rx =
+      0.5 * (0.5 + dx) * (0.5 + dx); /* right side, dist 1 - dx  */
 
-  const double ly = 0.5 * (0.5 - dy) * (0.5 - dy);  // left side, dist 1 + dy
-  const double my = 0.75 - dy * dy;                 // center, dist |dy|
-  const double ry = 0.5 * (0.5 + dy) * (0.5 + dy);  // right side, dist 1 - dy
+  const double ly = 0.5 * (0.5 - dy) * (0.5 - dy); /* left side, dist 1 + dy  */
+  const double my = 0.75 - dy * dy;                /* center, dist |dy|  */
+  const double ry =
+      0.5 * (0.5 + dy) * (0.5 + dy); /* right side, dist 1 - dy  */
 
-  const double lz = 0.5 * (0.5 - dz) * (0.5 - dz);  // left side, dist 1 + dz
-  const double mz = 0.75 - dz * dz;                 // center, dist |dz|
-  const double rz = 0.5 * (0.5 + dz) * (0.5 + dz);  // right side, dist 1 - dz
+  const double lz = 0.5 * (0.5 - dz) * (0.5 - dz); /* left side, dist 1 + dz  */
+  const double mz = 0.75 - dz * dz;                /* center, dist |dz|  */
+  const double rz = 0.5 * (0.5 + dz) * (0.5 + dz); /* right side, dist 1 - dz */
 
   /* TSC interpolation */
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j - 1, k - 1, N)],
-               value * lx * ly * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j - 1, k + 0, N)],
-               value * lx * ly * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j - 1, k + 1, N)],
-               value * lx * ly * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j + 0, k - 1, N)],
-               value * lx * my * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j + 0, k + 0, N)],
-               value * lx * my * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j + 0, k + 1, N)],
-               value * lx * my * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j + 1, k - 1, N)],
-               value * lx * ry * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j + 1, k + 0, N)],
-               value * lx * ry * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i - 1, j + 1, k + 1, N)],
-               value * lx * ry * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j - 1, k - 1, N)],
-               value * mx * ly * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j - 1, k + 0, N)],
-               value * mx * ly * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j - 1, k + 1, N)],
-               value * mx * ly * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 0, k - 1, N)],
-               value * mx * my * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 0, k + 0, N)],
-               value * mx * my * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 0, k + 1, N)],
-               value * mx * my * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 1, k - 1, N)],
-               value * mx * ry * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 1, k + 0, N)],
-               value * mx * ry * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 1, k + 1, N)],
-               value * mx * ry * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j - 1, k - 1, N)],
-               value * rx * ly * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j - 1, k + 0, N)],
-               value * rx * ly * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j - 1, k + 1, N)],
-               value * rx * ly * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 0, k - 1, N)],
-               value * rx * my * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 0, k + 0, N)],
-               value * rx * my * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 0, k + 1, N)],
-               value * rx * my * rz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 1, k - 1, N)],
-               value * rx * ry * lz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 1, k + 0, N)],
-               value * rx * ry * mz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 1, k + 1, N)],
-               value * rx * ry * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j - 1, k - 1, N, 2)],
+      value * lx * ly * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j - 1, k + 0, N, 2)],
+      value * lx * ly * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j - 1, k + 1, N, 2)],
+      value * lx * ly * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j + 0, k - 1, N, 2)],
+      value * lx * my * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j + 0, k + 0, N, 2)],
+      value * lx * my * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j + 0, k + 1, N, 2)],
+      value * lx * my * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j + 1, k - 1, N, 2)],
+      value * lx * ry * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j + 1, k + 0, N, 2)],
+      value * lx * ry * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i - 1, j + 1, k + 1, N, 2)],
+      value * lx * ry * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j - 1, k - 1, N, 2)],
+      value * mx * ly * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j - 1, k + 0, N, 2)],
+      value * mx * ly * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j - 1, k + 1, N, 2)],
+      value * mx * ly * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 0, k - 1, N, 2)],
+      value * mx * my * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 0, k + 0, N, 2)],
+      value * mx * my * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 0, k + 1, N, 2)],
+      value * mx * my * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 1, k - 1, N, 2)],
+      value * mx * ry * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 1, k + 0, N, 2)],
+      value * mx * ry * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 1, k + 1, N, 2)],
+      value * mx * ry * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j - 1, k - 1, N, 2)],
+      value * rx * ly * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j - 1, k + 0, N, 2)],
+      value * rx * ly * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j - 1, k + 1, N, 2)],
+      value * rx * ly * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 0, k - 1, N, 2)],
+      value * rx * my * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 0, k + 0, N, 2)],
+      value * rx * my * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 0, k + 1, N, 2)],
+      value * rx * my * rz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 1, k - 1, N, 2)],
+      value * rx * ry * lz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 1, k + 0, N, 2)],
+      value * rx * ry * mz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 1, k + 1, N, 2)],
+      value * rx * ry * rz);
 }
 
 INLINE static void gpart_to_grid_TSC(const struct gpart* gp, double* rho,
@@ -605,32 +629,38 @@ INLINE static void gpart_to_grid_TSC(const struct gpart* gp, double* rho,
   TSC_set(rho, N, i, j, k, dx, dy, dz, value);
 }
 
-// Taken verbatim from mesh_gravity.c
 __attribute__((always_inline)) INLINE static void CIC_set(
     double* mesh, const int N, const int i, const int j, const int k,
     const double tx, const double ty, const double tz, const double dx,
     const double dy, const double dz, const double value) {
 
   /* Classic CIC interpolation */
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 0, k + 0, N)],
-               value * tx * ty * tz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 0, k + 1, N)],
-               value * tx * ty * dz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 1, k + 0, N)],
-               value * tx * dy * tz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 0, j + 1, k + 1, N)],
-               value * tx * dy * dz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 0, k + 0, N)],
-               value * dx * ty * tz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 0, k + 1, N)],
-               value * dx * ty * dz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 1, k + 0, N)],
-               value * dx * dy * tz);
-  atomic_add_d(&mesh[row_major_id_periodic(i + 1, j + 1, k + 1, N)],
-               value * dx * dy * dz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 0, k + 0, N, 2)],
+      value * tx * ty * tz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 0, k + 1, N, 2)],
+      value * tx * ty * dz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 1, k + 0, N, 2)],
+      value * tx * dy * tz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 0, j + 1, k + 1, N, 2)],
+      value * tx * dy * dz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 0, k + 0, N, 2)],
+      value * dx * ty * tz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 0, k + 1, N, 2)],
+      value * dx * ty * dz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 1, k + 0, N, 2)],
+      value * dx * dy * tz);
+  atomic_add_d(
+      &mesh[row_major_id_periodic_with_padding(i + 1, j + 1, k + 1, N, 2)],
+      value * dx * dy * dz);
 }
 
-// Based on the same function from mesh_gravity.c, but with foldings in mind
 INLINE static void gpart_to_grid_CIC(const struct gpart* gp, double* rho,
                                      const int N, const double fac,
                                      const double dim[3], const double value) {
@@ -873,9 +903,9 @@ void mass_to_contrast_mapper(void* map_data, int num, void* extra) {
   for (int xi = xi_start; xi < xi_end; ++xi) {
     for (int yi = 0; yi < Ngrid; ++yi) {
       for (int zi = 0; zi < Ngrid; ++zi) {
-        const int index =
-            (xi * Ngrid + yi) * (Ngrid + 2) + zi;  // Ngrid+2 because of padding
-        grid[index] = grid[index] * invcellmean;   //-1.0; -1 only affects k=0
+        const int index = (xi * Ngrid + yi) * (Ngrid + 2) +
+                          zi; /* Ngrid+2 because of padding */
+        grid[index] = grid[index] * invcellmean; /* -1.0; -1 only affects k=0 */
       }
     }
   }
@@ -1095,7 +1125,7 @@ void power_spectrum(const enum power_type type1, const enum power_type type2,
   const struct engine* e = s->e;
   const struct unit_system* us = e->internal_units;
   const struct phys_const* phys_const = e->physical_constants;
-  const int snapnum = e->ps_output_count;  // -1 if after snapshot dump
+  const int snapnum = e->ps_output_count; /* -1 if after snapshot dump */
 
   const int Ngrid = pow_data->Ngrid;
   const int Ngrid2 = Ngrid * Ngrid;
@@ -1534,9 +1564,10 @@ void power_spectrum_struct_restore(struct power_spectrum_data* p,
   /* Initialize the plan only once -- much faster for FFTs run often!
      Does require us to allocate the grids, but we delete them right away */
   int Ngrid = p->Ngrid;
-  // Grid is padded to allow for in-place FFT
+
+  /* Grid is padded to allow for in-place FFT */
   p->powgrid = fftw_alloc_real(Ngrid * Ngrid * (Ngrid + 2));
-  // Pointer to grid to interpret it as complex data
+  /* Pointer to grid to interpret it as complex data */
   p->powgridft = (fftw_complex*)p->powgrid;
 
   p->fftplanpow = fftw_plan_dft_r2c_3d(Ngrid, Ngrid, Ngrid, p->powgrid,
@@ -1547,9 +1578,10 @@ void power_spectrum_struct_restore(struct power_spectrum_data* p,
   p->powgridft = NULL;
 
   /* Do the same for a second grid/plan to allow for cross power */
-  // Grid is padded to allow for in-place FFT
+
+  /* Grid is padded to allow for in-place FFT */
   p->powgrid2 = fftw_alloc_real(Ngrid * Ngrid * (Ngrid + 2));
-  // Pointer to grid to interpret it as complex data
+  /* Pointer to grid to interpret it as complex data */
   p->powgridft2 = (fftw_complex*)p->powgrid2;
 
   p->fftplanpow2 = fftw_plan_dft_r2c_3d(Ngrid, Ngrid, Ngrid, p->powgrid2,
