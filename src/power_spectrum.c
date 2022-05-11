@@ -170,7 +170,8 @@ void power_init(struct power_spectrum_data* p, struct swift_params* params,
   }
 
   /* Initialize the plan only once -- much faster for FFTs run often!
-     Does require us to allocate the grids, but we delete them right away */
+   * Does require us to allocate the grids, but we delete them right away.
+   * Plan can only be used for the same FFTW call */
   const int Ngrid = p->Ngrid;
 
   /* Grid is padded to allow for in-place FFT */
