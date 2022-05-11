@@ -52,7 +52,7 @@
 /**
  * @brief Return the #power_type corresponding to a given string.
  */
-enum power_type power_spectrum_get_type(const char* name) {
+INLINE static enum power_type power_spectrum_get_type(const char* name) {
   if (strcasecmp(name, "matter") == 0)
     return pow_type_matter;
   else if (strcasecmp(name, "cdm") == 0)
@@ -72,6 +72,34 @@ enum power_type power_spectrum_get_type(const char* name) {
   else
     error("Do not recognize the power spectrum type '%s'.", name);
   return pow_type_count;
+}
+
+/**
+ * @brief Get the name of the type of power component.
+ *
+ * @param type The #power_type for which we want the name.
+ */
+INLINE static const char* get_powtype_name(const enum power_type type) {
+
+  static const char* powtype_names[pow_type_count] = {"Matter",
+                                                      "CDM",
+                                                      "gas",
+                                                      "stars/BHs",
+                                                      "electron pressure",
+                                                      "neutrino",
+                                                      "neutrino (even)",
+                                                      "neutrino (odd)"};
+
+  return powtype_names[type];
+}
+
+INLINE static const char* get_powtype_filename(const enum power_type type) {
+
+  static const char* powtype_filenames[pow_type_count] = {
+      "matter",   "cdm",      "gas",       "starBH",
+      "pressure", "neutrino", "neutrino0", "neutrino1"};
+
+  return powtype_filenames[type];
 }
 
 /**
@@ -869,34 +897,6 @@ void pow_from_grid_mapper(void* map_data, const int num, void* extra) {
       } /* Loop over z */
     }   /* Loop over y */
   }     /* Loop over z */
-}
-
-/**
- * @brief Get the name of the type of power component.
- *
- * @param type The #power_type for which we want the name.
- */
-INLINE static const char* get_powtype_name(const enum power_type type) {
-
-  static const char* powtype_names[pow_type_count] = {"Matter",
-                                                      "CDM",
-                                                      "gas",
-                                                      "stars/BHs",
-                                                      "electron pressure",
-                                                      "neutrino",
-                                                      "neutrino (even)",
-                                                      "neutrino (odd)"};
-
-  return powtype_names[type];
-}
-
-INLINE static const char* get_powtype_filename(const enum power_type type) {
-
-  static const char* powtype_filenames[pow_type_count] = {
-      "matter",   "cdm",      "gas",       "starBH",
-      "pressure", "neutrino", "neutrino0", "neutrino1"};
-
-  return powtype_filenames[type];
 }
 
 /**
