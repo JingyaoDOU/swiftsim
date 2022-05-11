@@ -2,7 +2,7 @@
 if [ ! -e plummer.hdf5 ]
 then
     echo "Generating initial conditions for Plummer example..."
-    python3 plummerIC.py -a 0.1 -N 5000
+    python3 plummerIC.py -a 0.1 -N 65536
 fi
 
 # create output directory
