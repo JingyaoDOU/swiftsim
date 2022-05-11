@@ -981,11 +981,6 @@ void power_spectrum(const enum power_type type1, const enum power_type type2,
                     struct power_spectrum_data* pow_data, const struct space* s,
                     struct threadpool* tp, const int verbose) {
 
-#ifndef HAVE_THREADED_FFTW
-  message("Note that FFTW is not threaded!");
-  fflush(stdout);
-#endif
-
   const int* local_cells = s->local_cells_top;
   const int nr_local_cells = s->nr_local_cells;
   const struct engine* e = s->e;
@@ -993,6 +988,7 @@ void power_spectrum(const enum power_type type1, const enum power_type type2,
   const struct phys_const* phys_const = e->physical_constants;
   const int snapnum = e->ps_output_count; /* -1 if after snapshot dump */
 
+  /* Extract some useful constants */
   const int Ngrid = pow_data->Ngrid;
   const int Ngrid2 = Ngrid * Ngrid;
   const int Ngrid3 = Ngrid2 * Ngrid;
@@ -1012,11 +1008,10 @@ void power_spectrum(const enum power_type type1, const enum power_type type2,
             get_powtype_name(type1), get_powtype_name(type2));
 
   /* could loop over particles but for now just abort */
-  if (nr_local_cells == 0) {
+  if (nr_local_cells == 0)
     error("Cell infrastructure is not in place for power spectra.");
-  }
 
-  /* Allocate the grids */
+  /* Allocate the grids based on whether this is an auto- or cross-spectrum*/
   pow_data->powgrid = fftw_alloc_real(Ngrid2 * (Ngrid + 2));
   memuse_log_allocation("fftw_grid.grid", pow_data->powgrid, 1,
                         sizeof(double) * Ngrid2 * (Ngrid + 2));
@@ -1031,6 +1026,7 @@ void power_spectrum(const enum power_type type1, const enum power_type type2,
     pow_data->powgridft2 = pow_data->powgridft;
   }
 
+  /* Constants used for the normalization */
   double dim[3] = {s->dim[0], s->dim[1], s->dim[2]};
   const double volume = dim[0] * dim[1] * dim[2]; /* units Mpc^3 */
   const double Omega_m = s->e->cosmology->Omega_cdm + s->e->cosmology->Omega_b +
@@ -1108,10 +1104,14 @@ void power_spectrum(const enum power_type type1, const enum power_type type2,
 
     /* Store shot noise */
     shot = shotdata.tot12 / volume;
-    if (type1 != pow_type_pressure) shot /= meanrho;
-    if (type2 != pow_type_pressure) shot /= meanrho;
-    if (type1 == pow_type_pressure) shot *= conv_EV;
-    if (type2 == pow_type_pressure) shot *= conv_EV;
+    if (type1 != pow_type_pressure)
+      shot /= meanrho;
+    else
+      shot *= conv_EV;
+    if (type2 != pow_type_pressure)
+      shot /= meanrho;
+    else
+      shot *= conv_EV;
   }
 
   /* Gather the shared information to be used by the threads
@@ -1356,13 +1356,14 @@ void calc_all_power_spectra(struct power_spectrum_data* pow_data,
   const ticks tic = getticks();
 
   /* Loop over all type combinations the user requested */
-  for (int i = 0; i < pow_data->spectrumcount; ++i) {
+  for (int i = 0; i < pow_data->spectrumcount; ++i)
     power_spectrum(pow_data->types1[i], pow_data->types2[i], pow_data, s, tp,
                    verbose);
-  }
 
+  /* Increment the PS output counter */
   s->e->ps_output_count++;
 
+  /* Flag we did something special this step */
   s->e->step_props |= engine_step_prop_power_spectra;
 
   if (verbose)
