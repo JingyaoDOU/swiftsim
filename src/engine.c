@@ -2148,7 +2148,7 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
     }
   }
 
-  /* TODO: add condition whether to run this */
+  /* Run the RT sub-cycles now. */
   engine_run_rt_sub_cycles(e);
 
 #ifdef SWIFT_RT_DEBUG_CHECKS
@@ -2578,8 +2578,7 @@ void engine_step(struct engine *e) {
     error("Obtained a time-step of size 0");
 #endif
 
-  /* Do the RT sub-cycling now. */
-  /* TODO: add condition to skip this */
+  /* Run the RT sub-cycling now. */
   engine_run_rt_sub_cycles(e);
 
 #ifdef WITH_CSDS
