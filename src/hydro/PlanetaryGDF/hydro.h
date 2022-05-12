@@ -926,7 +926,9 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
 
 #ifdef PLANETARY_FIXED_ENTROPY
   /* Override the internal energy to satisfy the fixed entropy */
+  if (p->mat_id != 200 && p->mat_id != 0){
   p->u = gas_internal_energy_from_entropy(p->rho, p->s_fixed, p->mat_id);
+  }
   xp->u_full = p->u;
 #endif
 
