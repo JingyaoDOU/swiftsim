@@ -160,7 +160,7 @@ INLINE static void prepare_table_HM80(struct HM80_params *mat) {
   for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
     for (int i_u = 0; i_u < mat->num_u; i_u++) {
       mat->table_log_T_rho_u[i_rho * mat->num_u + i_u] =
-          logf(mat->table_log_P_rho_u[i_rho * mat->num_u + i_u]);
+          logf(mat->table_log_T_rho_u[i_rho * mat->num_u + i_u]);
     }
   }
 }
@@ -189,6 +189,14 @@ INLINE static void convert_units_HM80(struct HM80_params *mat,
       mat->table_log_P_rho_u[i_rho * mat->num_u + i_u] +=
           logf(units_cgs_conversion_factor(&si, UNIT_CONV_PRESSURE) /
                units_cgs_conversion_factor(us, UNIT_CONV_PRESSURE));
+    }
+  }
+
+  for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
+    for (int i_u = 0; i_u < mat->num_u; i_u++) {
+      mat->table_log_T_rho_u[i_rho * mat->num_u + i_u] +=
+          logf(units_cgs_conversion_factor(&si, UNIT_CONV_TEMPERATURE) /
+               units_cgs_conversion_factor(us, UNIT_CONV_TEMPERATURE));
     }
   }
 
@@ -331,6 +339,7 @@ INLINE static float HM80_soundspeed_from_pressure(
 }
 
 // gas_entropy_from_internal_energy
+// get gas temperature from internal energy (JYD) 
 INLINE static float HM80_temperature_from_internal_energy(
     float density, float u, const struct HM80_params *mat) {
 
@@ -367,15 +376,15 @@ INLINE static float HM80_temperature_from_internal_energy(
       (log_u - mat->log_u_min - idx_u * mat->log_u_step) * mat->inv_log_u_step;
 
   // Table values
-  log_P_1 = mat->table_log_P_rho_u[idx_rho * mat->num_u + idx_u];
-  log_P_2 = mat->table_log_P_rho_u[idx_rho * mat->num_u + idx_u + 1];
-  log_P_3 = mat->table_log_P_rho_u[(idx_rho + 1) * mat->num_u + idx_u];
-  log_P_4 = mat->table_log_P_rho_u[(idx_rho + 1) * mat->num_u + idx_u + 1];
+  log_T_1 = mat->table_log_T_rho_u[idx_rho * mat->num_u + idx_u];
+  log_T_2 = mat->table_log_T_rho_u[idx_rho * mat->num_u + idx_u + 1];
+  log_T_3 = mat->table_log_T_rho_u[(idx_rho + 1) * mat->num_u + idx_u];
+  log_T_4 = mat->table_log_T_rho_u[(idx_rho + 1) * mat->num_u + idx_u + 1];
 
-  log_P = (1.f - intp_rho) * ((1.f - intp_u) * log_P_1 + intp_u * log_P_2) +
-          intp_rho * ((1.f - intp_u) * log_P_3 + intp_u * log_P_4);
+  log_T = (1.f - intp_rho) * ((1.f - intp_u) * log_T_1 + intp_u * log_T_2) +
+          intp_rho * ((1.f - intp_u) * log_T_3 + intp_u * log_T_4);
 
-  return expf(log_P);
+  return expf(log_T);
 }
 
 // gas_density_from_pressure_and_temperature
