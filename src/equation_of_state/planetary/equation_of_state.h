@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
+ * Edit by Jingyao on May 12th 2022
  ******************************************************************************/
 #ifndef SWIFT_PLANETARY_EQUATION_OF_STATE_H
 #define SWIFT_PLANETARY_EQUATION_OF_STATE_H
