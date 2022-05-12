@@ -148,10 +148,18 @@ INLINE static void load_table_HM80(struct HM80_params *mat, char *table_file) {
 // Misc. modifications
 INLINE static void prepare_table_HM80(struct HM80_params *mat) {
 
-  // Convert pressures to log(pressure)
+  // Convert Pressures to log(pressure)
   for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
     for (int i_u = 0; i_u < mat->num_u; i_u++) {
       mat->table_log_P_rho_u[i_rho * mat->num_u + i_u] =
+          logf(mat->table_log_P_rho_u[i_rho * mat->num_u + i_u]);
+    }
+  }
+
+  // Convert Temperature to log(pressure)
+  for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
+    for (int i_u = 0; i_u < mat->num_u; i_u++) {
+      mat->table_log_T_rho_u[i_rho * mat->num_u + i_u] =
           logf(mat->table_log_P_rho_u[i_rho * mat->num_u + i_u]);
     }
   }
