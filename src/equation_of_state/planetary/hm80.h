@@ -42,6 +42,7 @@
 // Hubbard & MacFarlane (1980) parameters
 struct HM80_params {
   float *table_log_P_rho_u;
+  float *table_log_T_rho_u;
   int date, num_rho, num_u;
   float log_rho_min, log_rho_max, log_rho_step, inv_log_rho_step, log_u_min,
       log_u_max, log_u_step, inv_log_u_step, bulk_mod, P_min_for_c_min;
@@ -122,6 +123,9 @@ INLINE static void load_table_HM80(struct HM80_params *mat, char *table_file) {
   mat->table_log_P_rho_u =
       (float *)malloc(mat->num_rho * mat->num_u * sizeof(float));
 
+  mat->table_log_T_rho_u =
+      (float *)malloc(mat->num_rho * mat->num_u * sizeof(float));
+
   // Pressures (not log yet)
   for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
     for (int i_u = 0; i_u < mat->num_u; i_u++) {
@@ -129,6 +133,15 @@ INLINE static void load_table_HM80(struct HM80_params *mat, char *table_file) {
       if (c != 1) error("Failed to read the HM80 EoS table %s", table_file);
     }
   }
+
+  // Temperature (not log yet)
+  for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
+    for (int i_u = 0; i_u < mat->num_u; i_u++) {
+      c = fscanf(f, "%f", &mat->table_log_T_rho_u[i_rho * mat->num_u + i_u]);
+      if (c != 1) error("Failed to read the HM80 EoS table %s", table_file);
+    }
+  }
+  
   fclose(f);
 }
 
@@ -313,7 +326,48 @@ INLINE static float HM80_soundspeed_from_pressure(
 INLINE static float HM80_temperature_from_internal_energy(
     float density, float u, const struct HM80_params *mat) {
 
-  return 0.f;
+  float log_T, log_T_1, log_T_2, log_T_3, log_T_4;
+
+  if (u <= 0.f) {
+    return 0.f;
+  }
+
+  int idx_rho, idx_u;
+  float intp_rho, intp_u;
+  const float log_rho = logf(density);
+  const float log_u = logf(u);
+
+  // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u)
+  idx_rho = floor((log_rho - mat->log_rho_min) * mat->inv_log_rho_step);
+  idx_u = floor((log_u - mat->log_u_min) * mat->inv_log_u_step);
+
+  // If outside the table then extrapolate from the edge and edge-but-one values
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho - 1) {
+    idx_rho = mat->num_rho - 2;
+  }
+  if (idx_u <= -1) {
+    idx_u = 0;
+  } else if (idx_u >= mat->num_u - 1) {
+    idx_u = mat->num_u - 2;
+  }
+
+  intp_rho = (log_rho - mat->log_rho_min - idx_rho * mat->log_rho_step) *
+             mat->inv_log_rho_step;
+  intp_u =
+      (log_u - mat->log_u_min - idx_u * mat->log_u_step) * mat->inv_log_u_step;
+
+  // Table values
+  log_P_1 = mat->table_log_P_rho_u[idx_rho * mat->num_u + idx_u];
+  log_P_2 = mat->table_log_P_rho_u[idx_rho * mat->num_u + idx_u + 1];
+  log_P_3 = mat->table_log_P_rho_u[(idx_rho + 1) * mat->num_u + idx_u];
+  log_P_4 = mat->table_log_P_rho_u[(idx_rho + 1) * mat->num_u + idx_u + 1];
+
+  log_P = (1.f - intp_rho) * ((1.f - intp_u) * log_P_1 + intp_u * log_P_2) +
+          intp_rho * ((1.f - intp_u) * log_P_3 + intp_u * log_P_4);
+
+  return expf(log_P);
 }
 
 // gas_density_from_pressure_and_temperature
