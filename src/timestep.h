@@ -122,6 +122,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_gpart_timestep(
     error("gpart (id=%lld) wants a time-step (%e) below dt_min (%e)",
           gp->id_or_neg_offset, new_dt, e->dt_min);
 
+
   /* Convert to integer time */
   const integertime_t new_dti = make_integer_timestep(
       new_dt, gp->time_bin, num_time_bins, e->ti_current, e->time_base_inv);
@@ -200,6 +201,8 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
   if (new_dt < e->dt_min)
     error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);
+
+    printParticle(p,xp,p->id, e->s->nr_gparts);
 
   /* Convert to integer time */
   const integertime_t new_dti = make_integer_timestep(
