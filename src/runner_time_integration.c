@@ -706,6 +706,20 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
         /* Get new time-step */
         const integertime_t ti_new_step = get_part_timestep(p, xp, e);
 
+        if (ti_new_step < e->dt_min){
+          /*engine_dump_snapshot(&e);*/
+          lock_lock(&e->s->lock);
+          /* One last action before death? */
+          hydro_remove_part(p, xp, e->time);
+
+          /* Remove the particle entirely */
+          cell_remove_part(e, c, p, xp);
+          
+          printParticle(p,xp,p->id, e->s->nr_gparts);
+
+          printf("remove super fast particle+++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        }
+
         /* Update particle */
         p->time_bin = get_time_bin(ti_new_step);
         if (p->gpart != NULL) p->gpart->time_bin = p->time_bin;
@@ -1339,6 +1353,20 @@ void runner_do_sync(struct runner *r, struct cell *c, int force,
         /* Get new time-step */
         integertime_t ti_new_step = get_part_timestep(p, xp, e);
         timebin_t new_time_bin = get_time_bin(ti_new_step);
+
+        if (ti_new_step < e->dt_min){
+          /*engine_dump_snapshot(&e);*/
+          lock_lock(&e->s->lock);
+          /* One last action before death? */
+          hydro_remove_part(p, xp, e->time);
+
+          /* Remove the particle entirely */
+          cell_remove_part(e, c, p, xp);
+          
+          printParticle(p,xp,p->id, e->s->nr_gparts);
+
+          printf("remove super fast particle+++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        }
 
         /* Limit the time-bin to what is allowed in this step */
         new_time_bin = min(new_time_bin, e->max_active_bin);

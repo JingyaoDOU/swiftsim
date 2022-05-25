@@ -197,14 +197,22 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
 
   /* Limit timestep within the allowed range */
   new_dt = min(new_dt, e->dt_max);
-  /*lllll*/
+  
+  /* lllll
   if (new_dt < e->dt_min){
-    engine_dump_snapshot(&e);
+    
+    lock_lock(&e->s->lock);
+    
+    hydro_remove_part(p, xp, e->time);
+
+   
+    cell_remove_part(e, c, p, xp);
+
     printParticle(p,xp,p->id, e->s->nr_gparts);
     error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);
   }
-    
+  */
     
 
   /* Convert to integer time */
