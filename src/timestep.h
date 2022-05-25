@@ -210,7 +210,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
 
     printParticle(p,xp,p->id, e->s->nr_gparts);
     error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
-          new_dt, e->dt_min);
+          new_dt, e->dt_min);   
   }
   */
     
