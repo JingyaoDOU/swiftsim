@@ -704,7 +704,7 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
 #endif
 
         /* Get new time-step */
-        const integertime_t ti_new_step = get_part_timestep(p, xp, e);
+        const integertime_t ti_new_step = get_part_timestep(p, xp, e,c);
 
         /*if (ti_new_step < e->dt_min){
           
@@ -1449,7 +1449,7 @@ void runner_do_sync(struct runner *r, struct cell *c, int force,
         timestep_process_sync_part(p, xp, e, cosmo);
 
         /* Get new time-step */
-        integertime_t ti_new_step = get_part_timestep(p, xp, e);
+        integertime_t ti_new_step = get_part_timestep(p, xp, e, c);
         timebin_t new_time_bin = get_time_bin(ti_new_step);
         /*
         if (ti_new_step < e->dt_min){
