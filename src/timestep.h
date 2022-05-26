@@ -205,7 +205,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
     /*printf("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);*/
     
-    printf("dump snapshot before error quit")
+    printf("dump snapshot before error quit");
 
     engine_dump_snapshot(e);
 
