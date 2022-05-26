@@ -28,6 +28,10 @@
 #include "potential.h"
 #include "rt.h"
 #include "timeline.h"
+#include "cell.h"
+#include "engine.h"
+#include "hydro.h"
+#include "lock.h"
 
 /**
  * @brief Compute a valid integer time-step form a given time-step
@@ -139,7 +143,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_gpart_timestep(
  */
 __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
     const struct part *restrict p, const struct xpart *restrict xp,
-    const struct engine *restrict e) {
+    const struct engine *restrict e, const struct cell *restrict c) {
 
   /* Compute the next timestep (hydro condition) */
   const float new_dt_hydro =
@@ -205,12 +209,25 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
     /*printf("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);*/
     
-    printf("dump snapshot before error quit");
+    //printf("dump snapshot before error quit");
 
-    engine_dump_snapshot(&e);
+    //engine_dump_snapshot(&e);
 
-    error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
+    //error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
+    //      new_dt, e->dt_min);
+    printf("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);
+    lock_lock(&e->s->lock);
+          
+    hydro_remove_part(p, xp, e->time);
+      
+    cell_remove_part(e, c, p, xp);
+
+    if (lock_unlock(&e->s->lock) != 0)
+      error("Failed to unlock the space!");
+
+          
+    printf("remove super fast particle+++++++++++++++++++++++++++++++++++++++++++++++++\n");
   }
   /* Convert to integer time */
   const integertime_t new_dti = make_integer_timestep(
