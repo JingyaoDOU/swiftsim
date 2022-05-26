@@ -139,7 +139,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_gpart_timestep(
  */
 __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
     const struct part *restrict p, const struct xpart *restrict xp,
-    const struct engine *restrict e) {
+    const struct engine *restrict e, const struct cell *restrict c) {
 
   /* Compute the next timestep (hydro condition) */
   const float new_dt_hydro =
@@ -201,6 +201,14 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
   new_dt = min(new_dt, e->dt_max);
   
   if (new_dt < e->dt_min)
+
+    /*printf("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
+          new_dt, e->dt_min);*/
+    
+    printf("dump snapshot before error quit")
+
+    engine_dump_snapshot(e);
+
     error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);
   
@@ -209,7 +217,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
       new_dt, p->time_bin, p->limiter_data.min_ngb_time_bin, e->ti_current,
       e->time_base_inv);
 
-  printf("new_dt=(%e),new_dti=(%e)\n",new_dt,new_dti);
+  /*printf("new_dt=(%e),new_dti=(%e)\n",new_dt,new_dti);*/
 
   return new_dti;
 }
