@@ -1456,12 +1456,12 @@ void runner_do_sync(struct runner *r, struct cell *c, int force,
           
           printParticle(p,xp,p->id, e->s->nr_gparts);
 
-          /*engine_dump_snapshot(&e);
+          
           lock_lock(&e->s->lock);
-          /* One last action before death? 
+          
           hydro_remove_part(p, xp, e->time);
 
-          /* Remove the particle entirely 
+          
           cell_remove_part(e, c, p, xp);
 
           if (lock_unlock(&e->s->lock) != 0)
