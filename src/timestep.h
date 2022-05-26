@@ -142,7 +142,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_gpart_timestep(
  * @param e The #engine (used to get some constants).
  */
 __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
-    const struct part *restrict p, const struct xpart *restrict xp,
+    struct part *restrict p, struct xpart *restrict xp,
     const struct engine *restrict e, struct cell *restrict c) {
 
   /* Compute the next timestep (hydro condition) */
