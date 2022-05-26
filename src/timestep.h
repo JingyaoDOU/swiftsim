@@ -199,16 +199,17 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
 
   /* Limit timestep within the allowed range */
   new_dt = min(new_dt, e->dt_max);
-  /*
+  
   if (new_dt < e->dt_min)
     error("part (id=%lld) wants a time-step (%e) below dt_min (%e)", p->id,
           new_dt, e->dt_min);
-  */
   
   /* Convert to integer time */
   const integertime_t new_dti = make_integer_timestep(
       new_dt, p->time_bin, p->limiter_data.min_ngb_time_bin, e->ti_current,
       e->time_base_inv);
+
+  printf("new_dt=(%e),new_dti=(%e)\n",new_dt,new_dti);
 
   return new_dti;
 }

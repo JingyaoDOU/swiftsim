@@ -706,17 +706,16 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
         /* Get new time-step */
         const integertime_t ti_new_step = get_part_timestep(p, xp, e);
 
-        if (ti_new_step < e->dt_min){
+        /*if (ti_new_step < e->dt_min){
           
           printParticle(p,xp,p->id, e->s->nr_gparts);
 
-          /*engine_dump_snapshot(&e);*/
+          
           lock_lock(&e->s->lock);
-          /* One last action before death? */
+          
           hydro_remove_part(p, xp, e->time);
 
-          /* Remove the particle entirely */
-          cell_remove_part(e, c, p, xp);
+                    cell_remove_part(e, c, p, xp);
 
           if (lock_unlock(&e->s->lock) != 0)
             error("Failed to unlock the space!");
@@ -725,6 +724,7 @@ void runner_do_timestep(struct runner *r, struct cell *c, const int timer) {
           
           printf("remove super fast particle+++++++++++++++++++++++++++++++++++++++++++++++++\n");
         }
+        */
 
         /* Update particle */
         p->time_bin = get_time_bin(ti_new_step);
@@ -1451,17 +1451,17 @@ void runner_do_sync(struct runner *r, struct cell *c, int force,
         /* Get new time-step */
         integertime_t ti_new_step = get_part_timestep(p, xp, e);
         timebin_t new_time_bin = get_time_bin(ti_new_step);
-
+        /*
         if (ti_new_step < e->dt_min){
           
           printParticle(p,xp,p->id, e->s->nr_gparts);
 
-          /*engine_dump_snapshot(&e);*/
+          /*engine_dump_snapshot(&e);
           lock_lock(&e->s->lock);
-          /* One last action before death? */
+          /* One last action before death? 
           hydro_remove_part(p, xp, e->time);
 
-          /* Remove the particle entirely */
+          /* Remove the particle entirely 
           cell_remove_part(e, c, p, xp);
 
           if (lock_unlock(&e->s->lock) != 0)
@@ -1471,6 +1471,7 @@ void runner_do_sync(struct runner *r, struct cell *c, int force,
           
           printf("remove super fast particle+++++++++++++++++++++++++++++++++++++++++++++++++\n");
         }
+        /*
 
         /* Apply the limiter if necessary */
         if (p->limiter_data.wakeup != time_bin_not_awake) {
