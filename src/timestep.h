@@ -143,7 +143,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_gpart_timestep(
  */
 __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
     const struct part *restrict p, const struct xpart *restrict xp,
-    const struct engine *restrict e, const struct cell *restrict c) {
+    const struct engine *restrict e, struct cell *restrict c) {
 
   /* Compute the next timestep (hydro condition) */
   const float new_dt_hydro =
