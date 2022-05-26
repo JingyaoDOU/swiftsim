@@ -1470,8 +1470,8 @@ void runner_do_sync(struct runner *r, struct cell *c, int force,
           continue;
           
           printf("remove super fast particle+++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        }
-        /*
+        }*/
+        
 
         /* Apply the limiter if necessary */
         if (p->limiter_data.wakeup != time_bin_not_awake) {
