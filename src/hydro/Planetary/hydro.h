@@ -597,7 +597,9 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
 
 #ifdef PLANETARY_FIXED_ENTROPY
   /* Override the internal energy to satisfy the fixed entropy */
-  p->u = gas_internal_energy_from_entropy(p->rho, p->s_fixed, p->mat_id);
+   if (p->mat_id != 200){
+      p->u = gas_internal_energy_from_entropy(p->rho, p->s_fixed, p->mat_id);
+  }
   xp->u_full = p->u;
 #endif
 
@@ -790,9 +792,20 @@ __attribute__((always_inline)) INLINE static void hydro_predict_extra(
  * @param cosmo The current cosmological model.
  */
 __attribute__((always_inline)) INLINE static void hydro_end_force(
-    struct part *restrict p, const struct cosmology *cosmo) {
+    struct part *restrict p, struct xpart *restrict xp, const struct cosmology *cosmo) {
 
   p->force.h_dt *= p->h * hydro_dimension_inv;
+#ifdef PLANETARY_FIXED_ENTROPY
+  /* Override the internal energy to satisfy the fixed entropy */
+  p->v[0] *=0.5;
+  p->v[1] *=0.5;
+  p->v[2] *=0.5;
+  xp->v_full[0] = p->v[0];
+  xp->v_full[1] = p->v[1];
+  xp->v_full[2] = p->v[2];
+   
+#endif
+  
 }
 
 /**

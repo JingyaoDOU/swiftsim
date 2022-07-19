@@ -60,8 +60,7 @@ INLINE static void set_idg_def(struct idg_params *mat,
 INLINE static float idg_internal_energy_from_entropy(
     float density, float entropy, const struct idg_params *mat) {
 
-  return entropy * powf(density, mat->gamma - 1.f) *
-         mat->one_over_gamma_minus_one;
+  return entropy * powf(density, mat->gamma - 1.f) * mat->one_over_gamma_minus_one;
 }
 
 /**
