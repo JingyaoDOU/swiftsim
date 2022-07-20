@@ -99,11 +99,11 @@ void space_first_init_parts_mapper(void *restrict map_data, int count,
   }
 
   /* Overwrite the internal energy? */
-  if (u_init > 0.f) {
+  /*if (u_init > 0.f) {
     for (int k = 0; k < count; k++) {
       hydro_set_init_internal_energy(&p[k], u_init);
     }
-  }
+  }*/
 
   /* Initialise the rest */
   for (int k = 0; k < count; k++) {
