@@ -807,7 +807,6 @@ __attribute__((always_inline)) INLINE static void hydro_end_force(
 #endif
   
 }
-
 /**
  * @brief Kick the additional variables
  *

@@ -227,6 +227,8 @@ INLINE static float HM80_pressure_from_internal_energy(
   float log_P, log_P_1, log_P_2, log_P_3, log_P_4;
 
   if (u <= 0.f) {
+    error(
+                "U less than zero");
     return 0.f;
   }
 
