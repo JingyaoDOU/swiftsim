@@ -48,6 +48,7 @@
 #include "error.h"
 #include "kernel_hydro.h"
 #include "lock.h"
+#include "mhd.h"
 #include "minmax.h"
 #include "proxy.h"
 #include "restart.h"
@@ -797,13 +798,14 @@ void space_convert_rt_hydro_quantities_after_zeroth_step_mapper(
   struct part *restrict parts = (struct part *)map_data;
   const struct engine *restrict e = (struct engine *)extra_data;
   const struct rt_props *restrict rt_props = e->rt_props;
+  const struct cosmology *restrict cosmo = e->cosmology;
 
   /* Loop over all the particles ignoring the extra buffer ones for on-the-fly
    * creation */
   for (int k = 0; k < count; k++) {
     struct part *restrict p = &parts[k];
     if (parts[k].time_bin <= num_time_bins)
-      rt_init_part_after_zeroth_step(p, rt_props);
+      rt_init_part_after_zeroth_step(p, rt_props, cosmo);
   }
 #endif
 }
@@ -858,8 +860,10 @@ void space_convert_quantities_mapper(void *restrict map_data, int count,
   /* Loop over all the particles ignoring the extra buffer ones for on-the-fly
    * creation */
   for (int k = 0; k < count; k++) {
-    if (parts[k].time_bin <= num_time_bins)
+    if (parts[k].time_bin <= num_time_bins) {
       hydro_convert_quantities(&parts[k], &xparts[k], cosmo, hydro_props);
+      mhd_convert_quantities(&parts[k], &xparts[k], cosmo, hydro_props);
+    }
   }
 }
 
@@ -1063,6 +1067,8 @@ void space_collect_mean_masses(struct space *s, int verbose) {
    *
    * Note: the Intel compiler vectorizes this loop and creates FPEs from
    * the masked bit of the vector... Silly ICC... */
+  /* TK comment: the following also has problems with gnu_7.3.0 and optimization
+   */
 #if defined(__ICC)
 #pragma novector
 #endif
@@ -1116,8 +1122,8 @@ void space_init(struct space *s, struct swift_params *params,
                 size_t Nspart, size_t Nbpart, size_t Nnupart, int periodic,
                 int replicate, int remap_ids, int generate_gas_in_ics,
                 int hydro, int self_gravity, int star_formation, int with_sink,
-                int DM_background, int neutrinos, int verbose, int dry_run,
-                int nr_nodes) {
+                int with_DM, int with_DM_background, int neutrinos, int verbose,
+                int dry_run, int nr_nodes) {
 
   /* Clean-up everything */
   bzero(s, sizeof(struct space));
@@ -1131,7 +1137,8 @@ void space_init(struct space *s, struct swift_params *params,
   s->with_hydro = hydro;
   s->with_star_formation = star_formation;
   s->with_sink = with_sink;
-  s->with_DM_background = DM_background;
+  s->with_DM = with_DM;
+  s->with_DM_background = with_DM_background;
   s->with_neutrinos = neutrinos;
   s->nr_parts = Npart;
   s->nr_gparts = Ngpart;
@@ -1192,7 +1199,7 @@ void space_init(struct space *s, struct swift_params *params,
 
   /* Are we generating gas from the DM-only ICs? */
   if (generate_gas_in_ics) {
-    space_generate_gas(s, cosmo, hydro_properties, periodic, DM_background,
+    space_generate_gas(s, cosmo, hydro_properties, periodic, with_DM_background,
                        neutrinos, dim, verbose);
     parts = s->parts;
     gparts = s->gparts;
@@ -1211,7 +1218,7 @@ void space_init(struct space *s, struct swift_params *params,
     error("Value of 'InitialConditions:replicate' (%d) is too small",
           replicate);
   if (replicate > 1) {
-    if (DM_background)
+    if (with_DM_background)
       error("Can't replicate the space if background DM particles are in use.");
     if (neutrinos)
       error("Can't replicate the space if neutrino DM particles are in use.");

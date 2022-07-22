@@ -1,6 +1,6 @@
 /*******************************************************************************
  * This file is part of SWIFT.
- * Coypright (c) 2019 Josh Borrow (joshua.borrow@durham.ac.uk) &
+ * Copyright (c) 2019 Josh Borrow (joshua.borrow@durham.ac.uk) &
  *                    Matthieu Schaller (schaller@strw.leidenuniv.nl)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -465,6 +465,28 @@ __attribute__((always_inline)) INLINE static float hydro_compute_timestep(
                        (cosmo->a_factor_sound_speed * p->viscosity.v_sig);
 
   return dt_cfl;
+}
+
+/**
+ * @brief Compute the signal velocity between two gas particles
+ *
+ * This is eq. (103) of Price D., JCoPh, 2012, Vol. 231, Issue 3.
+ *
+ * @param dx Comoving vector separating both particles (pi - pj).
+ * @brief pi The first #part.
+ * @brief pj The second #part.
+ * @brief mu_ij The velocity on the axis linking the particles, or zero if the
+ * particles are moving away from each other,
+ * @brief beta The non-linear viscosity constant.
+ */
+__attribute__((always_inline)) INLINE static float hydro_signal_velocity(
+    const float dx[3], const struct part *restrict pi,
+    const struct part *restrict pj, const float mu_ij, const float beta) {
+
+  const float ci = pi->force.soundspeed;
+  const float cj = pj->force.soundspeed;
+
+  return ci + cj - beta * mu_ij;
 }
 
 /**

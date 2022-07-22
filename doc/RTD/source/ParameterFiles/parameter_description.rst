@@ -53,13 +53,15 @@ a compulsory parameter is missing an error will be raised at
 start-up.
 
 Finally, SWIFT outputs two YAML files at the start of a run. The first one
-``used_parameters.yml`` contains all the parameters that were used for this run,
-**including all the optional parameters left unspecified with their default
-values**. This file can be used to start an exact copy of the run. The second
-file, ``unused_parameters.yml`` contains all the values that were not read from
-the parameter file. This can be used to simplify the parameter file or check
-that nothing important was ignored (for instance because the code is not
-configured to use some options).
+``used_parameters.yml`` contains all the parameters that were used for this
+run, **including all the optional parameters left unspecified with their
+default values**. This file can be used to start an exact copy of the run. The
+second file, ``unused_parameters.yml`` contains all the values that were not
+read from the parameter file. This can be used to simplify the parameter file
+or check that nothing important was ignored (for instance because the code is
+not configured to use some options). Note that on restart a new file
+``used_parameters.yml.stepno`` is created and any changed parameters will be
+written to it.
 
 The rest of this page describes all the SWIFT parameters, split by
 section. A list of all the possible parameters is kept in the file
@@ -714,20 +716,21 @@ be:
 Physical Constants
 ------------------
 
-For some idealised test it can be useful to overwrite the value of
-some physical constants; in particular the value of the gravitational
-constant. SWIFT offers an optional parameter to overwrite the value of
-:math:`G_N`.
+For some idealised test it can be useful to overwrite the value of some physical
+constants; in particular the value of the gravitational constant and vacuum
+permeability. SWIFT offers an optional parameter to overwrite the value of
+:math:`G_N` and :math:`\mu_0`.
 
 .. code:: YAML
 
    PhysicalConstants:
-     G:   1
+     G:    1
+     mu_0: 1
 
 Note that this set :math:`G` to the specified value in the internal system
 of units. Setting a value of `1` when using the system of units (10^10 Msun,
 Mpc, km/s) will mean that :math:`G_N=1` in these units [#f2]_ instead of the
-normal value :math:`G_N=43.00927`.
+normal value :math:`G_N=43.00927`. The same applies to :math:`\mu_0`.
 
 This option is only used for specific tests and debugging. This entire
 section of the YAML file can typically be left out. More constants may
@@ -805,6 +808,14 @@ It is also possible to run the FOF algorithm just before writing each snapshot.
   (default: ``0``).
 
 See the section :ref:`Parameters_fof` for details of the FOF parameters.
+
+It is also possible to run the power spectrum calculation just before writing
+each snapshot.
+
+* Run PS every time a snapshot is dumped: ``invoke_ps``
+  (default: ``0``).
+
+See the section :ref:`Parameters_ps` for details of the power spectrum parameters.
 
 When running over MPI, users have the option to split the snapshot over more
 than one file. This can be useful if the parallel-io on a given system is slow
@@ -1202,6 +1213,78 @@ parameter sets the thermal energy per unit mass.
      planetary_ANEOS_forsterite_table_file:    ./EoSTables/ANEOS_forsterite_S19.txt
      planetary_ANEOS_iron_table_file:          ./EoSTables/ANEOS_iron_S20.txt
      planetary_ANEOS_Fe85Si15_table_file:      ./EoSTables/ANEOS_Fe85Si15_S20.txt
+
+.. _Parameters_ps:
+
+Power Spectra Calculation
+-------------------------
+
+
+SWIFT can compute a variety of auto- and cross- power spectra at user-specified
+intervals. The behaviour of this output type is governed by the ``PowerSpectrum``
+section of the parameter file. The calculation is performed on a regular grid
+(typically of size 256^3) and foldings are used to extend the range probed to
+smaller scales.
+
+The options are:
+
+ * The size of the base grid to perform the PS calculation:
+   ``grid_side_length``.
+ * The number of grid foldings to use: ``num_folds``.
+ * The factor by which to fold at each iteration: ``fold_factor`` (default: 4)
+ * The order of the window function: ``window_order`` (default: 3)
+
+The window order sets the way the particle properties get assigned to the mesh.
+Order 1 corresponds to the nearest-grid-point (NGP), order 2 to cloud-in-cell
+(CIC), and order 3 to triangular-shaped-cloud (TSC). Higher-order schemes are not
+implemented.
+
+Finally, the quantities for which a PS should be computed are specified as a
+list of pairs of values for the parameter ``requested_spectra``.  Auto-spectra
+are specified by using the same type for both pair members. The available values
+listed in the following table:
+
++---------------------+---------------------------------------------------+
+| Name                | Description                                       |
++=====================+===================================================+
+| ``matter``          | Mass density of all matter                        |
++---------------------+---------------------------------------------------+
+| ``cdm``             | Mass density of all dark matter                   |
++---------------------+---------------------------------------------------+
+| ``gas``             | Mass density of all gas                           |
++---------------------+---------------------------------------------------+
+| ``starBH``          | Mass density of all stars and BHs                 |
++---------------------+---------------------------------------------------+
+| ``neutrino``        | Mass density of all neutrinos                     |
++---------------------+---------------------------------------------------+
+| ``neutrino1``       | Mass density of a random half of the neutrinos    |
++---------------------+---------------------------------------------------+
+| ``neutrino2``       | Mass density of a the other half of the neutrinos |
++---------------------+---------------------------------------------------+
+| ``pressure``        | Electron pressure                                 |
++---------------------+---------------------------------------------------+
+
+A dark matter mass density auto-spectrum is specified as ``cdm-cdm`` and a gas
+density - electron pressure cross-spectrum as ``gas-pressure``.
+
+The ``neutrino1`` and ``neutrino2`` selections are based on the particle IDs and
+are mutually exclusive. The particles selected in each half are different in
+each output. Note that neutrino PS can only be computed when neutrinos are
+simulated using particles.
+
+An example of a valid power-spectrum section of the parameter file looks like:
+
+.. code:: YAML
+
+  PowerSpectrum:
+    grid_side_length:  256
+    num_folds:         3
+    requested_spectra: ["matter-matter", "cdm-cdm", "cdm-matter"] # Total-matter and CDM auto-spectra + CDM-total cross-spectrum
+
+Some additional specific options for the power-spectra outputs are described in the
+following pages:
+
+* :ref:`Output_list_label` (to have PS not evenly spaced in time)
 
 
 .. _Parameters_fof:
