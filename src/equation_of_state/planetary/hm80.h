@@ -181,9 +181,9 @@ INLINE static void convert_units_HM80(struct HM80_params *mat,
 INLINE static float HM80_internal_energy_from_entropy(
     float density, float entropy, const struct HM80_params *mat) {
 
-  error("This EOS function is not yet implemented!");
+  /*error("This EOS function is not yet implemented!");*/
 
-  return 0.f;
+  return entropy; // Internal energy forcing for HM80 HHe, use woma store U in fixed_entropy when creat the snapshot.
 }
 
 // gas_pressure_from_entropy
