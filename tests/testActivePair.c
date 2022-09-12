@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#include "../config.h"
+#include <config.h>
 
 /* Some standard headers. */
 #include <fenv.h>
@@ -345,8 +345,8 @@ void test_pair_interactions(struct runner *runner, struct cell **ci,
                             interaction_func vec_interaction, init_func init,
                             finalise_func finalise) {
 
-  runner_do_hydro_sort(runner, *ci, 0x1FFF, 0, 0);
-  runner_do_hydro_sort(runner, *cj, 0x1FFF, 0, 0);
+  runner_do_hydro_sort(runner, *ci, 0x1FFF, 0, 0, 0);
+  runner_do_hydro_sort(runner, *cj, 0x1FFF, 0, 0, 0);
 
   /* Zero the fields */
   init(*ci, runner->e->cosmology, runner->e->hydro_properties);
