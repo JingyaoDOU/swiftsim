@@ -41,9 +41,7 @@ struct rt_props {
   /* Are we using constant stellar emission rates? */
   int use_const_emission_rates;
 
-  /* Frequency bin edges for photon groups
-   * Includes 0 as leftmost edge, doesn't include infinity as
-   * rightmost bin edge*/
+  /* (Lower) frequency bin edges for photon groups */
   float photon_groups[RT_NGROUPS];
 
   /* Global constant stellar emission rates */
@@ -123,6 +121,9 @@ struct rt_props {
   /* total radiation absorbed by gas. This is not really a property,
    * but a placeholder to sum up a global variable */
   unsigned long long debug_radiation_absorbed_tot;
+
+  /* Max number of subcycles per hydro step */
+  int debug_max_nr_subcycles;
 
   /* Total radiation energy in the gas. It's being reset every step. */
   float debug_total_radiation_conserved_energy[RT_NGROUPS];
@@ -205,10 +206,10 @@ __attribute__((always_inline)) INLINE static void rt_props_print(
   if (engine_rank != 0) return;
 
   message("Radiative transfer scheme: '%s'", RT_IMPLEMENTATION);
-  char messagestring[200] = "Using photon frequency bins: [0.";
+  char messagestring[200] = "Using photon frequency bins: [ ";
   char freqstring[20];
-  for (int g = 1; g < RT_NGROUPS; g++) {
-    sprintf(freqstring, ", %.3g", rtp->photon_groups[g]);
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    sprintf(freqstring, "%.3g ", rtp->photon_groups[g]);
     strcat(messagestring, freqstring);
   }
   strcat(messagestring, "]");
@@ -259,20 +260,13 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
         "You need to run GEAR-RT with at least 1 photon group, "
         "you have %d",
         RT_NGROUPS);
-  } else if (RT_NGROUPS == 1) {
-    rtp->photon_groups[0] = 0.f;
   } else {
-    float frequencies[RT_NGROUPS - 1];
     /* !! Keep the frequencies in Hz for now. !! */
-    parser_get_param_float_array(params, "GEARRT:photon_groups_Hz",
-                                 RT_NGROUPS - 1, frequencies);
-    for (int g = 0; g < RT_NGROUPS - 1; g++) {
-      rtp->photon_groups[g + 1] = frequencies[g];
-    }
-    rtp->photon_groups[0] = 0.f;
+    parser_get_param_float_array(params, "GEARRT:photon_groups_Hz", RT_NGROUPS,
+                                 rtp->photon_groups);
   }
 
-  /* Sanity check. */
+  /* Sanity check: photon group edges must be in increasing order. */
   for (int g = 0; g < RT_NGROUPS - 1; g++) {
     if (rtp->photon_groups[g + 1] <= rtp->photon_groups[g])
       error(
@@ -440,6 +434,11 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   rtp->debug_radiation_absorbed_tot = 0ULL;
   rtp->debug_radiation_absorbed_this_step = 0ULL;
 
+  /* Don't make it an optional parameter here so we crash
+   * if I forgot to provide it */
+  rtp->debug_max_nr_subcycles =
+      parser_get_param_int(params, "TimeIntegration:max_nr_rt_subcycles");
+
   for (int g = 0; g < RT_NGROUPS; g++)
     rtp->debug_total_star_emitted_energy[g] = 0.f;
 
@@ -461,14 +460,6 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
 
   /* Finishers */
   /* --------- */
-
-  /* After initialisation, print params to screen */
-  rt_props_print(rtp);
-
-  /* Print a final message. */
-  if (engine_rank == 0) {
-    message("Radiative transfer initialized");
-  }
 }
 
 /**
