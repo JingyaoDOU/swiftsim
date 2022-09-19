@@ -353,7 +353,7 @@ INLINE static float SESAME_internal_energy_from_entropy(
   float u, log_u_1, log_u_2, log_u_3, log_u_4;
 
   if (entropy <= 0.f) {
-    error(Zero entropy please check);
+    error('Zero entropy please check');
     return 0.f;
   }
 
