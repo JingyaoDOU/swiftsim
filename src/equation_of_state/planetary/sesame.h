@@ -39,6 +39,7 @@
 #include "physical_constants.h"
 #include "units.h"
 #include "utilities.h"
+#include "minmax.h"
 
 // SESAME parameters
 struct SESAME_params {
@@ -359,9 +360,8 @@ INLINE static float SESAME_internal_energy_from_entropy(
 
   int idx_rho, idx_s_1, idx_s_2;
   float intp_rho, intp_s_1, intp_s_2;
-  const float log_rho = logf(density);
-  const float log_s = logf(entropy);
-
+  float log_rho = logf(density);
+  float log_s   = logf(entropy);
   // 2D interpolation (bilinear with log(rho), log(s)) to find u(rho, s))
   // Density index
   idx_rho =
@@ -390,16 +390,16 @@ INLINE static float SESAME_internal_energy_from_entropy(
     idx_s_1 = 0;
   } else if (idx_s_1 >= mat->num_T) {
     idx_s_1 = mat->num_T - 2;
-    log_s   = mat->table_log_s_rho_T[idx_rho * mat->num_T + idx_s_1 + 1];
   }
   if (idx_s_2 <= -1) {
     idx_s_2 = 0;
   } else if (idx_s_2 >= mat->num_T) {
     idx_s_2 = mat->num_T - 2;
-    if (log_s < mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1]){
-      log_s   = mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1];
-    }
   }
+  if ((idx_s_1 >= mat->num_T) && (idx_s_2 >= mat->num_T)){
+    log_s = max(mat->table_log_s_rho_T[idx_rho * mat->num_T + idx_s_1 + 1],mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1]);
+  }
+
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -496,8 +496,8 @@ INLINE static float SESAME_pressure_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  const float log_rho = logf(density);
-  const float log_u = logf(u);
+  float log_rho = logf(density);
+  float log_u = logf(u);
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
@@ -523,16 +523,17 @@ INLINE static float SESAME_pressure_from_internal_energy(
     idx_u_1 = 0;
   } else if (idx_u_1 >= mat->num_T) {
     idx_u_1 = mat->num_T - 2; 
-    log_u   = mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
-    if (log_u < mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]){
-      log_u   = mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
-    }
   }
+
+  if ((idx_u_1 >= mat->num_T) && (idx_u_2 >= mat->num_T)){
+    log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
+  }
+
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -628,8 +629,8 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  const float log_rho = logf(density);
-  const float log_u = logf(u);
+  float log_rho = logf(density);
+  float log_u = logf(u);
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find c(rho, u))
   // Density index
@@ -659,16 +660,18 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
     idx_u_1 = 0;
   } else if (idx_u_1 >= mat->num_T) {
     idx_u_1 = mat->num_T - 2;
-    log_u   = mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
   }
+
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
-    if (log_u < mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]){
-      log_u   = mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
-    }
   }
+
+  if ((idx_u_1 >= mat->num_T) && (idx_u_2 >= mat->num_T)){
+    log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
+  }
+
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
