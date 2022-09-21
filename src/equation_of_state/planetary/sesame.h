@@ -367,6 +367,13 @@ INLINE static float SESAME_internal_energy_from_entropy(
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
+
   // Sp. entropy at this and the next density (in relevant slice of s array)
   idx_s_1 = find_value_in_monot_incr_array(
       log_s, mat->table_log_s_rho_T + idx_rho * mat->num_T, mat->num_T);
@@ -374,20 +381,24 @@ INLINE static float SESAME_internal_energy_from_entropy(
       log_s, mat->table_log_s_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
   // If outside the table then extrapolate from the edge and edge-but-one values
-  if (idx_rho <= -1) {
+  /*if (idx_rho <= -1) {
     idx_rho = 0;
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-  }
+  }*/
   if (idx_s_1 <= -1) {
     idx_s_1 = 0;
   } else if (idx_s_1 >= mat->num_T) {
     idx_s_1 = mat->num_T - 2;
+    log_s   = mat->table_log_s_rho_T[idx_rho * mat->num_T + idx_s_1 + 1];
   }
   if (idx_s_2 <= -1) {
     idx_s_2 = 0;
   } else if (idx_s_2 >= mat->num_T) {
     idx_s_2 = mat->num_T - 2;
+    if (log_s < mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1]){
+      log_s   = mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1];
+    }
   }
 
   // Check for duplicates in SESAME tables before interpolation
@@ -492,6 +503,13 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
+  // change the order of this if statement, if a rho exceeds the edge of the table, then 
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -500,20 +518,20 @@ INLINE static float SESAME_pressure_from_internal_energy(
       log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
   // If outside the table then extrapolate from the edge and edge-but-one values
-  if (idx_rho <= -1) {
-    idx_rho = 0;
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-  }
+  
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
   } else if (idx_u_1 >= mat->num_T) {
-    idx_u_1 = mat->num_T - 2;
+    idx_u_1 = mat->num_T - 2; 
+    log_u   = mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
+    if (log_u < mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]){
+      log_u   = mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
+    }
   }
 
   // Check for duplicates in SESAME tables before interpolation
@@ -618,6 +636,13 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
+
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
       log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
@@ -625,20 +650,24 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
       log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
   // If outside the table then extrapolate from the edge and edge-but-one values
-  if (idx_rho <= -1) {
+  /*if (idx_rho <= -1) {
     idx_rho = 0;
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-  }
+  }*/
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
   } else if (idx_u_1 >= mat->num_T) {
     idx_u_1 = mat->num_T - 2;
+    log_u   = mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
+    if (log_u < mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]){
+      log_u   = mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
+    }
   }
 
   // Check for duplicates in SESAME tables before interpolation
