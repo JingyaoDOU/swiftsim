@@ -539,6 +539,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   }
 
   if ((flag1==1) && (flag2==1)){
+    printf("u: Extend the edge of the table[SESAME_pressure_from_internal_energy]");
     log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
   }
 
@@ -681,6 +682,7 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   }
 
   if ((flag1 == 1) && (flag2 == 1)){
+    printf("u: Extend the edge of the table[SESAME_soundspeed_from_internal_energy]");
     log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
   }
 
