@@ -504,12 +504,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
   // change the order of this if statement, if a rho exceeds the edge of the table, then 
-  if (idx_rho <= -1) {
-    idx_rho = 0;
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
-  }
+ 
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -518,7 +513,12 @@ INLINE static float SESAME_pressure_from_internal_energy(
       log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
   // If outside the table then extrapolate from the edge and edge-but-one values
-  
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
   } else if (idx_u_1 >= mat->num_T) {
@@ -637,13 +637,6 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
-  if (idx_rho <= -1) {
-    idx_rho = 0;
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
-  }
-
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
       log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
@@ -656,6 +649,12 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
   }*/
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
   } else if (idx_u_1 >= mat->num_T) {
