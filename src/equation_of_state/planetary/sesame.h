@@ -512,6 +512,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // change the order of this if statement, if a rho exceeds the edge of the table, then 
   if (idx_rho <= -1) {
     idx_rho = 0;
+    printf("rho low");
     //log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
@@ -530,16 +531,20 @@ INLINE static float SESAME_pressure_from_internal_energy(
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
     flag1 = -1;
+    printf("u1 left out");
   } else if (idx_u_1 >= mat->num_T) {
     idx_u_1 = mat->num_T - 2; 
     flag1 = 1;
+    printf("u1 right out");
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
     flag2 = -1;
+    printf("u2 left out");
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
     flag2 = 1;
+    rintf("u2 right out");
   }
 
   /*if ((flag1==1) && (flag2==1)){
@@ -587,11 +592,13 @@ INLINE static float SESAME_pressure_from_internal_energy(
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
+    printf("low u");
   }
 
-  if ((idx_rho > 0.f) && ((flag1 == 1) && (flag2 == 1) )) {
+  if ((idx_rho > 0.f) && ((flag1 == 1) || (flag2 == 1) )) {
     intp_u_1 = 1;
     intp_u_2 = 1;
+    printf("high u");
   }
   // If more than two table values are non-positive then return zero
   int num_non_pos = 0;
