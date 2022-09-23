@@ -521,10 +521,10 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // If outside the table then extrapolate from the edge and edge-but-one values
   if (idx_rho <= -1) {
     idx_rho = 0;
-    log_rho = mat->table_log_rho[idx_rho];
+    //log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+    //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
   }
 
   if (idx_u_1 <= -1) {
@@ -674,13 +674,13 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   }*/
   if (idx_rho <= -1) {
     idx_rho = 0;
-    log_rho = mat->table_log_rho[idx_rho];
+    //log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+    //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
     //printf("rho: CHANGED -> Extend the edge of the table[SESAME_soundspeed_from_internal_energy]");
   }
-  
+
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
     flag1 = -1;
