@@ -544,7 +544,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
     flag2 = 1;
-    rintf("u2 right out");
+    printf("u2 right out");
   }
 
   /*if ((flag1==1) && (flag2==1)){
