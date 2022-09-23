@@ -779,9 +779,10 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
     intp_u_2 = 0;
   }
 
-  if ((idx_rho > 0.f) && ((flag1==1) && (flag2==1) )) {
+  if ((idx_rho > 0.f) && ((flag1==1) || (flag2==1) )) {
     intp_u_1 = 1;
     intp_u_2 = 1;
+    printf("high u [sound]");
   }
 
   c = (1.f - intp_rho) * ((1.f - intp_u_1) * c_1 + intp_u_1 * c_2) +
