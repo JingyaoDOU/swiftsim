@@ -512,10 +512,10 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // change the order of this if statement, if a rho exceeds the edge of the table, then 
   if (idx_rho <= -1) {
     idx_rho = 0;
+    log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
     log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
-    printf("rho: CHANGED -> Extend the edge of the table[SESAME_pressure_from_entropy]");
   }
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
@@ -528,24 +528,26 @@ INLINE static float SESAME_pressure_from_internal_energy(
   
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
+    flag1 = -1;
   } else if (idx_u_1 >= mat->num_T) {
     idx_u_1 = mat->num_T - 2; 
     flag1 = 1;
-    printf("FLAG1: become true [SESAME_pressure_from_entropy]");
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
+    flag2 = -1;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
     flag2 = 1;
-    printf("FLAG2: become true [SESAME_pressure_from_entropy]");
   }
 
-  if ((flag1==1) && (flag2==1)){
-    printf("u: Extend the edge of the table[SESAME_pressure_from_internal_energy]");
+  /*if ((flag1==1) && (flag2==1)){
     log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
   }
 
+  if ((flag1 == -1) && (flag2 == -1)){
+    log_u = min(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
+  }*/
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -586,6 +588,10 @@ INLINE static float SESAME_pressure_from_internal_energy(
     intp_u_2 = 0;
   }
 
+  if ((idx_rho > 0.f) && ((flag1 == 1) && (flag2 == 1) )) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+  }
   // If more than two table values are non-positive then return zero
   int num_non_pos = 0;
   if (P_1 <= 0.f) num_non_pos++;
@@ -644,7 +650,7 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   float log_rho = logf(density);
   float log_u = logf(u);
   short int flag1 = 0; // flag to show if index is out of the array
-  short int flag2 = 0;
+  short int flag2 = 0; // flag = -1 (left edge) or 1 (right edge)
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find c(rho, u))
   // Density index
@@ -653,10 +659,11 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
 
   if (idx_rho <= -1) {
     idx_rho = 0;
+    log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
     log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
-    printf("rho: CHANGED -> Extend the edge of the table[SESAME_soundspeed_from_internal_energy]");
+    //printf("rho: CHANGED -> Extend the edge of the table[SESAME_soundspeed_from_internal_energy]");
   }
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
@@ -673,25 +680,28 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   }*/
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
+    flag1 = -1;
   } else if (idx_u_1 >= mat->num_T) {
     idx_u_1 = mat->num_T - 2;
-    printf("FLAG1: become true [SESAME_soundspeed_from_internal_energy]");
     flag1 = 1;
   }
 
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
+    flag2 = -1;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
     flag2 = 1;
-    printf("FLAG2: become true [SESAME_soundspeed_from_internal_energy]");
   }
-
+  /*
   if ((flag1 == 1) && (flag2 == 1)){
-    printf("u: Extend the edge of the table[SESAME_soundspeed_from_internal_energy]");
     log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
   }
-
+  
+  if ((flag1 == -1) && (flag2 == -1)){
+    log_u = min(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
+  }
+  */
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -757,6 +767,11 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
+  }
+
+  if ((idx_rho > 0.f) && ((flag1==1) && (flag2==1) )) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
   }
 
   c = (1.f - intp_rho) * ((1.f - intp_u_1) * c_1 + intp_u_1 * c_2) +
