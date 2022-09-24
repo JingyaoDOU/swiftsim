@@ -681,6 +681,7 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   float log_u = logf(u);
   short int flag1 = 0; // flag to show if index is out of the array
   short int flag2 = 0; // flag = -1 (left edge) or 1 (right edge)
+  short int flagrho = 0;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find c(rho, u))
   // Density index
@@ -689,12 +690,14 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
 
   if (idx_rho <= -1) {
     idx_rho = 0;
-    //log_rho = mat->table_log_rho[idx_rho];
+    flagrho = -1;
+    log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-    //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
-    //printf("rho: CHANGED -> Extend the edge of the table[SESAME_soundspeed_from_internal_energy]");
+    flagrho = 1;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
   }
+
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -702,22 +705,14 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   idx_u_2 = find_value_in_monot_incr_array(
       log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
-  // If outside the table then extrapolate from the edge and edge-but-one values
-  /*if (idx_rho <= -1) {
-    idx_rho = 0;
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-  }*/
-  
 
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
     flag1 = -1;
   } else if (idx_u_1 >= mat->num_T) {
-    idx_u_1 = mat->num_T - 2;
+    idx_u_1 = mat->num_T - 2; 
     flag1 = 1;
   }
-
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
     flag2 = -1;
@@ -725,6 +720,8 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
     idx_u_2 = mat->num_T - 2;
     flag2 = 1;
   }
+  
+
   /*
   if ((flag1 == 1) && (flag2 == 1)){
     log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
@@ -795,7 +792,7 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   c_4 = logf(c_4);
 
   // If below the minimum u at this rho then just use the lowest table values
-  if ((idx_rho > 0.f) &&
+  /*if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
@@ -805,7 +802,18 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
     intp_u_1 = 1;
     intp_u_2 = 1;
     printf("high u [sound]");
+  }*/
+
+  if ((flag1 == 1) || (flag2 == 1) ) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
   }
+
+  if ((flag1 == -1) || (flag2 == -1) ) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+  }
+  
 
   c = (1.f - intp_rho) * ((1.f - intp_u_1) * c_1 + intp_u_1 * c_2) +
       intp_rho * ((1.f - intp_u_2) * c_3 + intp_u_2 * c_4);
