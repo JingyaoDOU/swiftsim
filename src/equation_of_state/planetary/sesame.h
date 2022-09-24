@@ -504,6 +504,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   float log_u = logf(u);
   short int flag1 = 0; // flag to show if index is out of the array
   short int flag2 = 0;
+  short int flagrho = 0;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
@@ -512,10 +513,13 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // change the order of this if statement, if a rho exceeds the edge of the table, then 
   if (idx_rho <= -1) {
     idx_rho = 0;
-    printf("rho low");
+    flagrho = -1;
+    printf("rholow");
     //log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
+    flagrho = 1;
+    printf("rhohigh");
     //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
   }
 
@@ -562,6 +566,10 @@ INLINE static float SESAME_pressure_from_internal_energy(
   } else {
     intp_rho = 1.f;
   }
+  if (flagrho==1){
+    printf("intprho=%.2g",intp_rho);
+  }
+  
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
     intp_u_1 =
@@ -588,18 +596,32 @@ INLINE static float SESAME_pressure_from_internal_energy(
   P_4 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
 
   // If below the minimum u at this rho then just use the lowest table values
-  if ((idx_rho > 0.f) &&
+  /*if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
-    printf("low u");
-  }
+  }*/
 
-  if ((idx_rho > 0.f) && ((flag1 == 1) || (flag2 == 1) )) {
+  /*if ((idx_rho > 0.f) && ((flag1 == 1) || (flag2 == 1) )) {
     intp_u_1 = 1;
     intp_u_2 = 1;
     printf("high u");
+  }*/
+
+  if ((flag1 == 1) || (flag2 == 1) ) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+    printf("intp1");
   }
+
+  if ((flag1 == -1) || (flag2 == -1) ) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+    printf("intp0");
+  }
+  
+
+
   // If more than two table values are non-positive then return zero
   int num_non_pos = 0;
   if (P_1 <= 0.f) num_non_pos++;
