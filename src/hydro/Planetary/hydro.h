@@ -226,7 +226,7 @@ hydro_get_comoving_soundspeed(const struct part *restrict p) {
 __attribute__((always_inline)) INLINE static float
 hydro_get_comoving_vsig(const struct part *restrict p) {
 
-  return p->force.vsig;
+  return p->force.v_sig;
 }
 
 /**
