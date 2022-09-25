@@ -89,6 +89,12 @@ INLINE static void convert_cs(const struct engine* e, const struct part* p,
   ret[0] = hydro_get_comoving_soundspeed(p);
 }
 
+INLINE static void convert_vsig(const struct engine* e, const struct part* p,
+                             const struct xpart* xp, float* ret) {
+
+  ret[0] = hydro_get_comoving_vsig(p);
+}
+
 INLINE static void convert_S(const struct engine* e, const struct part* p,
                              const struct xpart* xp, float* ret) {
 
@@ -196,7 +202,7 @@ INLINE static void hydro_write_particles(const struct part* parts,
                                          struct io_props* list,
                                          int* num_fields) {
 
-  *num_fields = 12;
+  *num_fields = 13;
 
   /* List what we want to write */
   list[0] = io_make_output_field_convert_part(
@@ -234,6 +240,9 @@ INLINE static void hydro_write_particles(const struct part* parts,
   list[11] = io_make_output_field_convert_part(
       "SoundSpeed", FLOAT, 1, UNIT_CONV_SPEED, 0.f, parts,
       xparts, convert_cs, "Sound Speed of the particles");
+  list[12] = io_make_output_field_convert_part(
+      "SignalSpeed", FLOAT, 1, UNIT_CONV_SPEED, 0.f, parts,
+      xparts, convert_vsig, "Signal Speed of the particles");
 }
 
 /**

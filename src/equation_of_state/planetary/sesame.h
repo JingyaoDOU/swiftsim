@@ -566,9 +566,9 @@ INLINE static float SESAME_pressure_from_internal_energy(
   } else {
     intp_rho = 1.f;
   }
-  if ((flagrho==1) && (intp_rho > 10.0)){
+  /*if ((flagrho==1) && (intp_rho > 10.0)){
     intp_rho*=0.1; // less extraplolation
-  }
+  }*/
 
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
@@ -740,9 +740,9 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
     intp_rho = 1.f;
   }
 
-  if ((flagrho==1) && (intp_rho > 10.0)){
+  /*if ((flagrho==1) && (intp_rho > 10.0)){
     intp_rho*=0.1; // less extraplolation
-  }
+  }*/
 
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
