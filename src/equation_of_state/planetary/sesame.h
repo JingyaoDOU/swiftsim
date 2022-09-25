@@ -515,12 +515,12 @@ INLINE static float SESAME_pressure_from_internal_energy(
     idx_rho = 0;
     flagrho = -1;
     //printf("rholow");
-    //log_rho = mat->table_log_rho[idx_rho];
+    log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
     flagrho = 1;
     //printf("rhohigh");
-    //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
   }
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
@@ -566,9 +566,9 @@ INLINE static float SESAME_pressure_from_internal_energy(
   } else {
     intp_rho = 1.f;
   }
-  if ((flagrho==1) && (intp_rho > 10.0)){
+  /*if ((flagrho==1) && (intp_rho > 10.0)){
     intp_rho*=0.5; // half rho extraplolation
-  }
+  }*/
 
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
@@ -691,11 +691,11 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   if (idx_rho <= -1) {
     idx_rho = 0;
     flagrho = -1;
-    //log_rho = mat->table_log_rho[idx_rho];
+    log_rho = mat->table_log_rho[idx_rho];
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
     flagrho = 1;
-    //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
   }
 
 
@@ -740,9 +740,9 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
     intp_rho = 1.f;
   }
 
-  if ((flagrho==1) && (intp_rho > 10.0)){
+  /*if ((flagrho==1) && (intp_rho > 10.0)){
     intp_rho*=0.5; // half rho extraplolation
-  }
+  }*/
 
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
