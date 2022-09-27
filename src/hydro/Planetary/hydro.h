@@ -224,12 +224,6 @@ hydro_get_comoving_soundspeed(const struct part *restrict p) {
 }
 
 __attribute__((always_inline)) INLINE static float
-hydro_get_comoving_intp_rho(const struct part *restrict p) {
-
-  return p->force.intp_rho;
-}
-
-__attribute__((always_inline)) INLINE static float
 hydro_get_comoving_vsig(const struct part *restrict p) {
 
   return p->force.v_sig;
@@ -703,9 +697,6 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
   const float soundspeed =
       gas_soundspeed_from_internal_energy(p->rho, p->u, p->mat_id);
 
-  const float intp_rho =
-      gas_intp_rho_from_density(p->rho, p->mat_id);
-
   /* Compute the "grad h" term  - Note here that we have \tilde{x}
    * as 1 as we use the local number density to find neighbours. This
    * introduces a j-component that is considered in the force loop,
@@ -754,7 +745,6 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
   p->force.pressure = pressure;
   p->force.soundspeed = soundspeed;
   p->force.balsara = balsara;
-  p->force.intp_rho = intp_rho;
 }
 
 /**

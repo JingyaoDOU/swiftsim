@@ -829,36 +829,6 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   return c;
 }
 
-INLINE static float SESAME_intp_rho_from_density(
-    float density, const struct SESAME_params *mat) {
-
-  int idx_rho;
-  float intp_rho;
-  float log_rho = logf(density);
-
-  // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
-  // Density index
-  idx_rho =
-      find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
-  // change the order of this if statement, if a rho exceeds the edge of the table, then 
-  if (idx_rho <= -1) {
-    idx_rho = 0;
-    //log_rho = mat->table_log_rho[idx_rho];
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-    //log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
-  }
-
-  // Check for duplicates in SESAME tables before interpolation
-  if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
-    intp_rho = (log_rho - mat->table_log_rho[idx_rho]) /
-               (mat->table_log_rho[idx_rho + 1] - mat->table_log_rho[idx_rho]);
-  } else {
-    intp_rho = 1.f;
-  }
-  
-  return intp_rho;
-
 // gas_soundspeed_from_pressure
 INLINE static float SESAME_soundspeed_from_pressure(
     float density, float P, const struct SESAME_params *mat) {

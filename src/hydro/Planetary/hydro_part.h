@@ -185,9 +185,6 @@ struct part {
       /*! Balsara switch */
       float balsara;
 
-      /*! Density extrapolation */
-      float intp_rho;
-
     } force;
   };
 
