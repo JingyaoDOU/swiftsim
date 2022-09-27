@@ -251,7 +251,7 @@ INLINE static void hydro_write_particles(const struct part* parts,
       xparts, convert_vsig, "Signal Speed of the particles");
   list[13] = io_make_output_field_convert_part(
       "IntpRho", FLOAT, 1, UNIT_CONV_NO_UNITS, 0.f, parts,
-      xparts, convert_intp_rho, "Interpolation of density");
+      xparts, convert_intp_rho, "Interpolation of");
 }
 
 /**
