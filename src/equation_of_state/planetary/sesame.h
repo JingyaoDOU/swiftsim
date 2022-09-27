@@ -1,6 +1,6 @@
 /*******************************************************************************
  * This file is part of SWIFT.
- * Copyright (c) 2016   Matthieu Schaller (matthieu.schaller@durham.ac.uk).
+ * Copyright (c) 2016   Matthieu Schaller (schaller@strw.leidenuniv.nl).
  *               2018   Jacob Kegerreis (jacob.kegerreis@durham.ac.uk).
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,6 +39,7 @@
 #include "physical_constants.h"
 #include "units.h"
 #include "utilities.h"
+#include "minmax.h"
 
 // SESAME parameters
 struct SESAME_params {
@@ -99,26 +100,26 @@ INLINE static void set_ANEOS_Fe85Si15(struct SESAME_params *mat,
 /*
     Skip a line while reading a file.
 */
-INLINE static int skip_line(FILE* f) {
-    int c;
+INLINE static int skip_line(FILE *f) {
+  int c;
 
-    // Read each character until reaching the end of the line or file
-    do {
-        c = fgetc(f);
-    } while ((c != '\n') && (c != EOF));
+  // Read each character until reaching the end of the line or file
+  do {
+    c = fgetc(f);
+  } while ((c != '\n') && (c != EOF));
 
-    return c;
+  return c;
 }
 
 /*
     Skip n lines while reading a file.
 */
-INLINE static int skip_lines(FILE* f, int n) {
-    int c;
+INLINE static int skip_lines(FILE *f, int n) {
+  int c;
 
-    for (int i = 0; i < n; i++) c = skip_line(f);
+  for (int i = 0; i < n; i++) c = skip_line(f);
 
-    return c;
+  return c;
 }
 
 /*
@@ -131,8 +132,8 @@ INLINE static int skip_lines(FILE* f, int n) {
     num_rho  num_T
     rho[0]   rho[1]  ...  rho[num_rho]                          (kg/m^3)
     T[0]     T[1]    ...  T[num_T]                              (K)
-    u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)
-    u[1, 0]                 ...         ...         ...
+    u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s,
+   J/K/kg) u[1, 0]                 ...         ...         ...
     ...                     ...         ...         ...
     u[num_rho-1, 0]         ...         ...         ...
     u[0, 1]                 ...         ...         ...
@@ -353,18 +354,27 @@ INLINE static float SESAME_internal_energy_from_entropy(
   float u, log_u_1, log_u_2, log_u_3, log_u_4;
 
   if (entropy <= 0.f) {
+    error("Zero entropy please check");
     return 0.f;
   }
 
   int idx_rho, idx_s_1, idx_s_2;
   float intp_rho, intp_s_1, intp_s_2;
-  const float log_rho = logf(density);
-  const float log_s = logf(entropy);
-
+  float log_rho = logf(density);
+  float log_s   = logf(entropy);
+  short int flag1 = 0; // flag to show if index is out of the array
+  short int flag2 = 0;
   // 2D interpolation (bilinear with log(rho), log(s)) to find u(rho, s))
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
+
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
 
   // Sp. entropy at this and the next density (in relevant slice of s array)
   idx_s_1 = find_value_in_monot_incr_array(
@@ -373,21 +383,27 @@ INLINE static float SESAME_internal_energy_from_entropy(
       log_s, mat->table_log_s_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
   // If outside the table then extrapolate from the edge and edge-but-one values
-  if (idx_rho <= -1) {
+  /*if (idx_rho <= -1) {
     idx_rho = 0;
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-  }
+  }*/
   if (idx_s_1 <= -1) {
     idx_s_1 = 0;
   } else if (idx_s_1 >= mat->num_T) {
     idx_s_1 = mat->num_T - 2;
+    flag1 = 1;
   }
   if (idx_s_2 <= -1) {
     idx_s_2 = 0;
   } else if (idx_s_2 >= mat->num_T) {
     idx_s_2 = mat->num_T - 2;
+    flag2 = 1; 
   }
+  if ((flag1 == 1) && (flag2 == 1)){
+    log_s = max(mat->table_log_s_rho_T[idx_rho * mat->num_T + idx_s_1 + 1],mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1]);
+  }
+
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -484,13 +500,28 @@ INLINE static float SESAME_pressure_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  const float log_rho = logf(density);
-  const float log_u = logf(u);
+  float log_rho = logf(density);
+  float log_u = logf(u);
+  short int flag1 = 0; // flag to show if index is out of the array
+  short int flag2 = 0;
+  short int flagrho = 0;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
+  // change the order of this if statement, if a rho exceeds the edge of the table, then 
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+    flagrho = -1;
+    //printf("rholow");
+    log_rho = mat->table_log_rho[idx_rho];
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    flagrho = 1;
+    //printf("rhohigh");
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -499,21 +530,34 @@ INLINE static float SESAME_pressure_from_internal_energy(
       log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
   // If outside the table then extrapolate from the edge and edge-but-one values
-  if (idx_rho <= -1) {
-    idx_rho = 0;
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-  }
+  
+
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
+    flag1 = -1;
+    //printf("u1left");
   } else if (idx_u_1 >= mat->num_T) {
-    idx_u_1 = mat->num_T - 2;
+    idx_u_1 = mat->num_T - 2; 
+    flag1 = 1;
+    //printf("u1right");
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
+    flag2 = -1;
+    //printf("u2left");
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
+    flag2 = 1;
+    //printf("u2right");
   }
+
+  /*if ((flag1==1) && (flag2==1)){
+    log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
+  }
+
+  if ((flag1 == -1) && (flag2 == -1)){
+    log_u = min(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
+  }*/
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -522,6 +566,10 @@ INLINE static float SESAME_pressure_from_internal_energy(
   } else {
     intp_rho = 1.f;
   }
+  /*if ((flagrho==1) && (intp_rho > 10.0)){
+    intp_rho*=0.5; // half rho extraplolation
+  }*/
+
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
     intp_u_1 =
@@ -548,11 +596,31 @@ INLINE static float SESAME_pressure_from_internal_energy(
   P_4 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
 
   // If below the minimum u at this rho then just use the lowest table values
-  if ((idx_rho > 0.f) &&
+  /*if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
+  }*/
+
+  /*if ((idx_rho > 0.f) && ((flag1 == 1) || (flag2 == 1) )) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+    printf("high u");
+  }*/
+
+  if ((flag1 == 1) || (flag2 == 1) ) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+    //printf("intp1");
   }
+
+  if ((flag1 == -1) || (flag2 == -1) ) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+    //printf("intp0");
+  }
+  
+
 
   // If more than two table values are non-positive then return zero
   int num_non_pos = 0;
@@ -609,13 +677,27 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  const float log_rho = logf(density);
-  const float log_u = logf(u);
+  float log_rho = logf(density);
+  float log_u = logf(u);
+  short int flag1 = 0; // flag to show if index is out of the array
+  short int flag2 = 0; // flag = -1 (left edge) or 1 (right edge)
+  short int flagrho = 0;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find c(rho, u))
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
+
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+    flagrho = -1;
+    log_rho = mat->table_log_rho[idx_rho];
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+    flagrho = 1;
+    log_rho = mat->table_log_rho[idx_rho + 1]; // asign rho the value of the edge of the table
+  }
+
 
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -623,22 +705,32 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   idx_u_2 = find_value_in_monot_incr_array(
       log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
-  // If outside the table then extrapolate from the edge and edge-but-one values
-  if (idx_rho <= -1) {
-    idx_rho = 0;
-  } else if (idx_rho >= mat->num_rho) {
-    idx_rho = mat->num_rho - 2;
-  }
+
   if (idx_u_1 <= -1) {
     idx_u_1 = 0;
+    flag1 = -1;
   } else if (idx_u_1 >= mat->num_T) {
-    idx_u_1 = mat->num_T - 2;
+    idx_u_1 = mat->num_T - 2; 
+    flag1 = 1;
   }
   if (idx_u_2 <= -1) {
     idx_u_2 = 0;
+    flag2 = -1;
   } else if (idx_u_2 >= mat->num_T) {
     idx_u_2 = mat->num_T - 2;
+    flag2 = 1;
   }
+  
+
+  /*
+  if ((flag1 == 1) && (flag2 == 1)){
+    log_u = max(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1 + 1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1]);
+  }
+  
+  if ((flag1 == -1) && (flag2 == -1)){
+    log_u = min(mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1], mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
+  }
+  */
 
   // Check for duplicates in SESAME tables before interpolation
   if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
@@ -647,6 +739,11 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   } else {
     intp_rho = 1.f;
   }
+
+  /*if ((flagrho==1) && (intp_rho > 10.0)){
+    intp_rho*=0.5; // half rho extraplolation
+  }*/
+
   if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
       mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
     intp_u_1 =
@@ -700,11 +797,28 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   c_4 = logf(c_4);
 
   // If below the minimum u at this rho then just use the lowest table values
-  if ((idx_rho > 0.f) &&
+  /*if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
   }
+
+  if ((idx_rho > 0.f) && ((flag1==1) || (flag2==1) )) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+    printf("high u [sound]");
+  }*/
+
+  if ((flag1 == 1) || (flag2 == 1) ) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+  }
+
+  if ((flag1 == -1) || (flag2 == -1) ) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+  }
+  
 
   c = (1.f - intp_rho) * ((1.f - intp_u_1) * c_1 + intp_u_1 * c_2) +
       intp_rho * ((1.f - intp_u_2) * c_3 + intp_u_2 * c_4);
