@@ -223,6 +223,12 @@ hydro_get_comoving_soundspeed(const struct part *restrict p) {
   return p->force.soundspeed;
 }
 
+__attribute__((always_inline)) INLINE static float
+hydro_get_comoving_vsig(const struct part *restrict p) {
+
+  return p->force.v_sig;
+}
+
 /**
  * @brief Returns the physical sound speed of a particle
  *
