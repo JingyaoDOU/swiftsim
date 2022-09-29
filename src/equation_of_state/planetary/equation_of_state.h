@@ -1316,7 +1316,8 @@ gas_entropy_from_internal_energy(float density, float u,
  */
 __attribute__((always_inline)) INLINE static float
 gas_pressure_from_internal_energy(float density, float u,
-                                  enum eos_planetary_material_id mat_id) {
+                                  enum eos_planetary_material_id mat_id,
+                                  const struct unit_system *us) {
 
   const enum eos_planetary_type_id type =
       (enum eos_planetary_type_id)(mat_id / eos_planetary_type_factor);
@@ -1497,8 +1498,8 @@ gas_pressure_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set "
                 "EoS:planetary_use_ANEOS_forsterite: 1");
 #endif
-          return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.ANEOS_forsterite);
+          return SESAME_pressure_from_internal_energy(
+              density, u, &eos.ANEOS_forsterite, us);
           break;
 
         case eos_planetary_id_ANEOS_iron:
@@ -1508,7 +1509,7 @@ gas_pressure_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_ANEOS_iron: 1");
 #endif
           return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.ANEOS_iron);
+                                                      &eos.ANEOS_iron, us);
           break;
 
         case eos_planetary_id_ANEOS_Fe85Si15:
@@ -1519,7 +1520,7 @@ gas_pressure_from_internal_energy(float density, float u,
                 "1");
 #endif
           return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.ANEOS_Fe85Si15);
+                                                      &eos.ANEOS_Fe85Si15, us);
           break;
 
         default:
