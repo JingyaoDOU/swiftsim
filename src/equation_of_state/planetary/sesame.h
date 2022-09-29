@@ -626,7 +626,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
             intp_rho, intp_u_1, intp_u_2, expf(P_1) * 9.3743E17,
             expf(P_2) * 9.3743E17, expf(P_3) * 9.3743E17, expf(P_4) * 9.3743E17,
             P * 9.3743E17);
-        if ((P1 == P3) || (P2 == P4)) {
+        if ((P_1 == P_3) || (P_2 == P_4)) {
           printf("PRESSULE EQUAL\n");
         }
         if (intp_u_1 == intp_u_2) {
