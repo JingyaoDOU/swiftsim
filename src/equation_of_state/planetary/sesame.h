@@ -481,13 +481,9 @@ INLINE static float SESAME_entropy_from_internal_energy(
 
 // gas_pressure_from_internal_energy
 INLINE static float SESAME_pressure_from_internal_energy(
-    float density, float u, const struct SESAME_params *mat,
-    const struct unit_system *us) {
+    float density, float u, const struct SESAME_params *mat) {
 
-  struct unit_system si;
-  units_init_si(&si);
-
-  float P, P_1, P_2, P_3, P_4;
+    float P, P_1, P_2, P_3, P_4;
 
   if (u <= 0.f) {
     return 0.f;
