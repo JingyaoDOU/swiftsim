@@ -491,7 +491,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   const float log_rho = logf(density);
   const float log_u = logf(u);
 
-  const float *array;
+  float *array;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
@@ -507,7 +507,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
       array[i] += logf(
           units_cgs_conversion_factor(us, UNIT_CONV_ENERGY_PER_UNIT_MASS) /
           units_cgs_conversion_factor(&si, UNIT_CONV_ENERGY_PER_UNIT_MASS));
-      printf("%g ", expf(array[i]));
+      printf("%g ", expf(&array[i]));
     }
     printf("\n");
     error("RHO OUT INDEX");
