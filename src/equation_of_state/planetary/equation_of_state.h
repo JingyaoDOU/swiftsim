@@ -1316,7 +1316,7 @@ gas_entropy_from_internal_energy(float density, float u,
  */
 __attribute__((always_inline)) INLINE static float
 gas_pressure_from_internal_energy(float density, float u,
-                                  enum eos_planetary_material_id mat_id, ) {
+                                  enum eos_planetary_material_id mat_id) {
 
   const enum eos_planetary_type_id type =
       (enum eos_planetary_type_id)(mat_id / eos_planetary_type_factor);
