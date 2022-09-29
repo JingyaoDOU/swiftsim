@@ -493,7 +493,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   float intp_rho, intp_u_1, intp_u_2;
   const float log_rho = logf(density);
   const float log_u = logf(u);
-  int short flagrho;
+  int short flagrho = 0;
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
   idx_rho =
@@ -502,13 +502,13 @@ INLINE static float SESAME_pressure_from_internal_energy(
 
   if (idx_rho >= mat->num_rho) {
     flagrho = 1;
-    printf("rho = %f g/cc \n", expf(log_rho));
+    printf("rho = %f g/cc \n", expf(log_rho) * 23.09543);
 
-    // for (int i = 0; i < mat->num_T; i++) {
-    //   printf("%.7g ", expf(array[i]));
-    // }
-    // printf("\n");
-    // error("RHO OUT INDEX");
+    for (int i = 0; i < mat->num_T; i++) {
+      printf("%.7g ", expf(array[i]) * 40589641E6);
+    }
+    printf("\n");
+    error("RHO OUT INDEX");
   }
   // Sp. int. energy at this and the next density (in relevant slice of u
   // array)
@@ -572,14 +572,15 @@ INLINE static float SESAME_pressure_from_internal_energy(
     printf(
         "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 = "
         "%.7g, P_3 = %.7g, P_4 = %.7g\n",
-        intp_rho, intp_u_1, intp_u_2, P_1, P_2, P_3, P_4);
+        intp_rho, intp_u_1, intp_u_2, expf(P_1) * 9.3743E17,
+        expf(P_2) * 9.3743E17, expf(P_3) * 9.3743E17, expf(P_4) * 9.3743E17);
   }
 
   if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
-    printf("case1");
+    printf("case1\n");
   }
 
   // If more than two table values are non-positive then return zero
@@ -593,7 +594,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
     // Unless already trying to extrapolate in which case return zero
     if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
         (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
-      printf("case2");
+      printf("case2\n");
       return 0.f;
     }
     if (P_1 <= 0.f) P_1 = mat->P_tiny;
