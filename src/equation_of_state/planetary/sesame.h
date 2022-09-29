@@ -474,7 +474,11 @@ INLINE static float SESAME_entropy_from_internal_energy(
 
 // gas_pressure_from_internal_energy
 INLINE static float SESAME_pressure_from_internal_energy(
-    float density, float u, const struct SESAME_params *mat) {
+    float density, float u, const struct SESAME_params *mat,
+    const struct unit_system *us) {
+
+  struct unit_system si;
+  units_init_si(&si);
 
   float P, P_1, P_2, P_3, P_4;
 
@@ -484,10 +488,10 @@ INLINE static float SESAME_pressure_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  const float log_rho = logf(density);
+  float log_rho = logf(density);
   const float log_u = logf(u);
 
-  const float *array;
+  float *array;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
@@ -495,10 +499,15 @@ INLINE static float SESAME_pressure_from_internal_energy(
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
   if (idx_rho >= mat->num_rho) {
-    printf("rho = %f g/cc \n", expf(rho));
+    log_rho += logf(units_cgs_conversion_factor(us, UNIT_CONV_DENSITY) /
+                    units_cgs_conversion_factor(&si, UNIT_CONV_DENSITY));
+    printf("rho = %f g/cc \n", expf(log_rho));
     array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
     for (int i = 0; i < mat->num_T; i++) {
-      printf("%f ", array[i]);
+      array[i] += logf(
+          units_cgs_conversion_factor(us, UNIT_CONV_ENERGY_PER_UNIT_MASS) /
+          units_cgs_conversion_factor(&si, UNIT_CONV_ENERGY_PER_UNIT_MASS));
+      printf("%g ", expf(array[i]));
     }
     printf("\n");
     error("RHO OUT INDEX");
