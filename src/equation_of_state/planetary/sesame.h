@@ -572,8 +572,8 @@ INLINE static float SESAME_pressure_from_internal_energy(
     printf(
         "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 = "
         "%.7g, P_3 = %.7g, P_4 = %.7g\n",
-        intp_rho, intp_u_1, intp_u_2, expf(P_1) * 9.3743E17,
-        expf(P_2) * 9.3743E17, expf(P_3) * 9.3743E17, expf(P_4) * 9.3743E17);
+        intp_rho, intp_u_1, intp_u_2, P_1 * 9.3743E17, P_2 * 9.3743E17,
+        P_3 * 9.3743E17, P_4 * 9.3743E17);
   }
 
   if ((idx_rho > 0.f) &&
