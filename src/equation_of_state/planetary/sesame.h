@@ -488,7 +488,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  const float log_rho = logf(density);
+  float log_rho = logf(density);
   const float log_u = logf(u);
 
   float *array;
