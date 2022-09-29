@@ -580,61 +580,61 @@ INLINE static float SESAME_pressure_from_internal_energy(
   //   }
   // }
 
-  // if ((idx_rho > 0.f) &&
+  if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
-        intp_u_1 = 0;
-        intp_u_2 = 0;
-        printf("case1\n");
-      }
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+    printf("case1\n");
+  }
 
-      // If more than two table values are non-positive then return zero
-      int num_non_pos = 0;
-      if (P_1 <= 0.f) num_non_pos++;
-      if (P_2 <= 0.f) num_non_pos++;
-      if (P_3 <= 0.f) num_non_pos++;
-      if (P_4 <= 0.f) num_non_pos++;
-      if (num_non_pos > 0) {
-        // If just one or two are non-positive then replace them with a tiny
-        // value Unless already trying to extrapolate in which case return zero
-        if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
-            (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
-          printf("case2\n");
-          return 0.f;
-        }
-        if (P_1 <= 0.f) P_1 = mat->P_tiny;
-        if (P_2 <= 0.f) P_2 = mat->P_tiny;
-        if (P_3 <= 0.f) P_3 = mat->P_tiny;
-        if (P_4 <= 0.f) P_4 = mat->P_tiny;
-      }
+  // If more than two table values are non-positive then return zero
+  int num_non_pos = 0;
+  if (P_1 <= 0.f) num_non_pos++;
+  if (P_2 <= 0.f) num_non_pos++;
+  if (P_3 <= 0.f) num_non_pos++;
+  if (P_4 <= 0.f) num_non_pos++;
+  if (num_non_pos > 0) {
+    // If just one or two are non-positive then replace them with a tiny
+    // value Unless already trying to extrapolate in which case return zero
+    if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
+        (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
+      printf("case2\n");
+      return 0.f;
+    }
+    if (P_1 <= 0.f) P_1 = mat->P_tiny;
+    if (P_2 <= 0.f) P_2 = mat->P_tiny;
+    if (P_3 <= 0.f) P_3 = mat->P_tiny;
+    if (P_4 <= 0.f) P_4 = mat->P_tiny;
+  }
 
-      // Interpolate with the log values
-      P_1 = logf(P_1);
-      P_2 = logf(P_2);
-      P_3 = logf(P_3);
-      P_4 = logf(P_4);
+  // Interpolate with the log values
+  P_1 = logf(P_1);
+  P_2 = logf(P_2);
+  P_3 = logf(P_3);
+  P_4 = logf(P_4);
 
-      P = (1.f - intp_rho) * ((1.f - intp_u_1) * P_1 + intp_u_1 * P_2) +
-          intp_rho * ((1.f - intp_u_2) * P_3 + intp_u_2 * P_4);
+  P = (1.f - intp_rho) * ((1.f - intp_u_1) * P_1 + intp_u_1 * P_2) +
+      intp_rho * ((1.f - intp_u_2) * P_3 + intp_u_2 * P_4);
 
-      // Convert back from log
-      P = expf(P);
-      if (flagrho == 1) {
-        printf(
-            "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 "
-            "= "
-            "%.7g, P_3 = %.7g, P_4 = %.7g, P = %.7g \n",
-            intp_rho, intp_u_1, intp_u_2, expf(P_1) * 9.3743E17,
-            expf(P_2) * 9.3743E17, expf(P_3) * 9.3743E17, expf(P_4) * 9.3743E17,
-            P * 9.3743E17);
-        if ((P_1 == P_3) || (P_2 == P_4)) {
-          printf("PRESSULE EQUAL\n");
-        }
-        if (intp_u_1 == intp_u_2) {
-          printf("intpu1=intpu2\n");
-        }
-      }
+  // Convert back from log
+  P = expf(P);
+  if (flagrho == 1) {
+    printf(
+        "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 "
+        "= "
+        "%.7g, P_3 = %.7g, P_4 = %.7g, P = %.7g \n",
+        intp_rho, intp_u_1, intp_u_2, expf(P_1) * 9.3743E17,
+        expf(P_2) * 9.3743E17, expf(P_3) * 9.3743E17, expf(P_4) * 9.3743E17,
+        P * 9.3743E17);
+    if ((P_1 == P_3) || (P_2 == P_4)) {
+      printf("PRESSULE EQUAL\n");
+    }
+    if (intp_u_1 == intp_u_2) {
+      printf("intpu1=intpu2\n");
+    }
+  }
 
-      return P;
+  return P;
 }
 
 // gas_internal_energy_from_pressure
