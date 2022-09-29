@@ -126,9 +126,9 @@ hydro_get_drifted_physical_internal_energy(const struct part *restrict p,
  * @param p The particle of interest
  */
 __attribute__((always_inline)) INLINE static float hydro_get_comoving_pressure(
-    const struct part *restrict p, const struct unit_system *us) {
+    const struct part *restrict p) {
 
-  return gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
+  return gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
 }
 
 /**
@@ -141,7 +141,7 @@ __attribute__((always_inline)) INLINE static float hydro_get_comoving_pressure(
  * @param cosmo The cosmological model.
  */
 __attribute__((always_inline)) INLINE static float hydro_get_physical_pressure(
-    const struct part *restrict p, const struct cosmology *cosmo, ) {
+    const struct part *restrict p, const struct cosmology *cosmo) {
 
   return cosmo->a_factor_pressure *
          gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
@@ -385,7 +385,7 @@ hydro_set_physical_internal_energy(struct part *p, struct xpart *xp,
 __attribute__((always_inline)) INLINE static void
 hydro_set_drifted_physical_internal_energy(struct part *p,
                                            const struct cosmology *cosmo,
-                                           const float u, ) {
+                                           const float u) {
 
   p->u = u / cosmo->a_factor_internal_energy;
 
@@ -818,7 +818,7 @@ __attribute__((always_inline)) INLINE static void hydro_predict_extra(
     struct part *restrict p, const struct xpart *restrict xp, float dt_drift,
     float dt_therm, const struct cosmology *cosmo,
     const struct hydro_props *hydro_props,
-    const struct entropy_floor_properties *floor_props, ) {
+    const struct entropy_floor_properties *floor_props) {
 
   /* Predict the internal energy */
   p->u += p->u_dt * dt_therm;
@@ -926,7 +926,7 @@ __attribute__((always_inline)) INLINE static void hydro_kick_extra(
  */
 __attribute__((always_inline)) INLINE static void hydro_convert_quantities(
     struct part *restrict p, struct xpart *restrict xp,
-    const struct cosmology *cosmo, const struct hydro_props *hydro_props, ) {
+    const struct cosmology *cosmo, const struct hydro_props *hydro_props) {
 
   /* Compute the pressure */
   const float pressure =
