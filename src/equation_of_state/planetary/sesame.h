@@ -495,21 +495,21 @@ INLINE static float SESAME_pressure_from_internal_energy(
 
   int idx_rho, idx_u_1, idx_u_2;
   float intp_rho, intp_u_1, intp_u_2;
-  float log_rho = logf(density);
+  const float log_rho = logf(density);
   const float log_u = logf(u);
-
-  float *array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
+  float *array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
 
   if (idx_rho >= mat->num_rho) {
 
     printf("rho = %f g/cc \n", expf(log_rho));
+
     for (int i = 0; i < mat->num_T; i++) {
-      printf("%g ", expf(array[i]));
+      printf("%.7g ", expf(array[i]));
     }
     printf("\n");
     error("RHO OUT INDEX");
