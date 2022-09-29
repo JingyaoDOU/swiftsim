@@ -501,244 +501,242 @@ INLINE static float SESAME_pressure_from_internal_energy(
       printf("%f ", array[i]);
     }
     printf("\n");
-    // Sp. int. energy at this and the next density (in relevant slice of u
-    // array)
-    idx_u_1 = find_value_in_monot_incr_array(
-        log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
-    idx_u_2 = find_value_in_monot_incr_array(
-        log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
+    error("RHO OUT INDEX");
+  }
+  // Sp. int. energy at this and the next density (in relevant slice of u
+  // array)
+  idx_u_1 = find_value_in_monot_incr_array(
+      log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
+  idx_u_2 = find_value_in_monot_incr_array(
+      log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
 
-    // If outside the table then extrapolate from the edge and edge-but-one
-    // values
-    if (idx_rho <= -1) {
-      idx_rho = 0;
-    } else if (idx_rho >= mat->num_rho) {
-      idx_rho = mat->num_rho - 2;
-    }
-    if (idx_u_1 <= -1) {
-      idx_u_1 = 0;
-    } else if (idx_u_1 >= mat->num_T) {
-      idx_u_1 = mat->num_T - 2;
-    }
-    if (idx_u_2 <= -1) {
-      idx_u_2 = 0;
-    } else if (idx_u_2 >= mat->num_T) {
-      idx_u_2 = mat->num_T - 2;
-    }
-
-    // Check for duplicates in SESAME tables before interpolation
-    if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
-      intp_rho =
-          (log_rho - mat->table_log_rho[idx_rho]) /
-          (mat->table_log_rho[idx_rho + 1] - mat->table_log_rho[idx_rho]);
-    } else {
-      intp_rho = 1.f;
-    }
-    if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
-        mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
-      intp_u_1 =
-          (log_u - mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) /
-          (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] -
-           mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]);
-    } else {
-      intp_u_1 = 1.f;
-    }
-    if (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] !=
-        mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) {
-      intp_u_2 =
-          (log_u -
-           mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) /
-          (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] -
-           mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
-    } else {
-      intp_u_2 = 1.f;
-    }
-
-    // Table values
-    P_1 = mat->table_P_rho_T[idx_rho * mat->num_T + idx_u_1];
-    P_2 = mat->table_P_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
-    P_3 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2];
-    P_4 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
-
-    // If below the minimum u at this rho then just use the lowest table values
-    if ((idx_rho > 0.f) &&
-        ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
-      intp_u_1 = 0;
-      intp_u_2 = 0;
-    }
-
-    // If more than two table values are non-positive then return zero
-    int num_non_pos = 0;
-    if (P_1 <= 0.f) num_non_pos++;
-    if (P_2 <= 0.f) num_non_pos++;
-    if (P_3 <= 0.f) num_non_pos++;
-    if (P_4 <= 0.f) num_non_pos++;
-    if (num_non_pos > 0) {
-      // If just one or two are non-positive then replace them with a tiny value
-      // Unless already trying to extrapolate in which case return zero
-      if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
-          (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
-        return 0.f;
-      }
-      if (P_1 <= 0.f) P_1 = mat->P_tiny;
-      if (P_2 <= 0.f) P_2 = mat->P_tiny;
-      if (P_3 <= 0.f) P_3 = mat->P_tiny;
-      if (P_4 <= 0.f) P_4 = mat->P_tiny;
-    }
-
-    // Interpolate with the log values
-    P_1 = logf(P_1);
-    P_2 = logf(P_2);
-    P_3 = logf(P_3);
-    P_4 = logf(P_4);
-
-    P = (1.f - intp_rho) * ((1.f - intp_u_1) * P_1 + intp_u_1 * P_2) +
-        intp_rho * ((1.f - intp_u_2) * P_3 + intp_u_2 * P_4);
-
-    // Convert back from log
-    P = expf(P);
-
-    return P;
+  // If outside the table then extrapolate from the edge and edge-but-one
+  // values
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+  }
+  if (idx_u_1 <= -1) {
+    idx_u_1 = 0;
+  } else if (idx_u_1 >= mat->num_T) {
+    idx_u_1 = mat->num_T - 2;
+  }
+  if (idx_u_2 <= -1) {
+    idx_u_2 = 0;
+  } else if (idx_u_2 >= mat->num_T) {
+    idx_u_2 = mat->num_T - 2;
   }
 
-  // gas_internal_energy_from_pressure
-  INLINE static float SESAME_internal_energy_from_pressure(
-      float density, float P, const struct SESAME_params *mat) {
-
-    error("This EOS function is not yet implemented!");
-
-    return 0.f;
+  // Check for duplicates in SESAME tables before interpolation
+  if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
+    intp_rho = (log_rho - mat->table_log_rho[idx_rho]) /
+               (mat->table_log_rho[idx_rho + 1] - mat->table_log_rho[idx_rho]);
+  } else {
+    intp_rho = 1.f;
+  }
+  if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
+      mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
+    intp_u_1 =
+        (log_u - mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) /
+        (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] -
+         mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]);
+  } else {
+    intp_u_1 = 1.f;
+  }
+  if (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] !=
+      mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) {
+    intp_u_2 =
+        (log_u - mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) /
+        (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] -
+         mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
+  } else {
+    intp_u_2 = 1.f;
   }
 
-  // gas_soundspeed_from_internal_energy
-  INLINE static float SESAME_soundspeed_from_internal_energy(
-      float density, float u, const struct SESAME_params *mat) {
+  // Table values
+  P_1 = mat->table_P_rho_T[idx_rho * mat->num_T + idx_u_1];
+  P_2 = mat->table_P_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
+  P_3 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2];
+  P_4 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
 
-    float c, c_1, c_2, c_3, c_4;
+  // If below the minimum u at this rho then just use the lowest table values
+  if ((idx_rho > 0.f) &&
+      ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+  }
 
-    if (u <= 0.f) {
+  // If more than two table values are non-positive then return zero
+  int num_non_pos = 0;
+  if (P_1 <= 0.f) num_non_pos++;
+  if (P_2 <= 0.f) num_non_pos++;
+  if (P_3 <= 0.f) num_non_pos++;
+  if (P_4 <= 0.f) num_non_pos++;
+  if (num_non_pos > 0) {
+    // If just one or two are non-positive then replace them with a tiny value
+    // Unless already trying to extrapolate in which case return zero
+    if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
+        (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
       return 0.f;
     }
-
-    int idx_rho, idx_u_1, idx_u_2;
-    float intp_rho, intp_u_1, intp_u_2;
-    const float log_rho = logf(density);
-    const float log_u = logf(u);
-
-    // 2D interpolation (bilinear with log(rho), log(u)) to find c(rho, u))
-    // Density index
-    idx_rho = find_value_in_monot_incr_array(log_rho, mat->table_log_rho,
-                                             mat->num_rho);
-
-    // Sp. int. energy at this and the next density (in relevant slice of u
-    // array)
-    idx_u_1 = find_value_in_monot_incr_array(
-        log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
-    idx_u_2 = find_value_in_monot_incr_array(
-        log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
-
-    // If outside the table then extrapolate from the edge and edge-but-one
-    // values
-    if (idx_rho <= -1) {
-      idx_rho = 0;
-    } else if (idx_rho >= mat->num_rho) {
-      idx_rho = mat->num_rho - 2;
-    }
-    if (idx_u_1 <= -1) {
-      idx_u_1 = 0;
-    } else if (idx_u_1 >= mat->num_T) {
-      idx_u_1 = mat->num_T - 2;
-    }
-    if (idx_u_2 <= -1) {
-      idx_u_2 = 0;
-    } else if (idx_u_2 >= mat->num_T) {
-      idx_u_2 = mat->num_T - 2;
-    }
-
-    // Check for duplicates in SESAME tables before interpolation
-    if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
-      intp_rho =
-          (log_rho - mat->table_log_rho[idx_rho]) /
-          (mat->table_log_rho[idx_rho + 1] - mat->table_log_rho[idx_rho]);
-    } else {
-      intp_rho = 1.f;
-    }
-    if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
-        mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
-      intp_u_1 =
-          (log_u - mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) /
-          (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] -
-           mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]);
-    } else {
-      intp_u_1 = 1.f;
-    }
-    if (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] !=
-        mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) {
-      intp_u_2 =
-          (log_u -
-           mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) /
-          (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] -
-           mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
-    } else {
-      intp_u_2 = 1.f;
-    }
-
-    // Table values
-    c_1 = mat->table_c_rho_T[idx_rho * mat->num_T + idx_u_1];
-    c_2 = mat->table_c_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
-    c_3 = mat->table_c_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2];
-    c_4 = mat->table_c_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
-
-    // If more than two table values are non-positive then return zero
-    int num_non_pos = 0;
-    if (c_1 <= 0.f) num_non_pos++;
-    if (c_2 <= 0.f) num_non_pos++;
-    if (c_3 <= 0.f) num_non_pos++;
-    if (c_4 <= 0.f) num_non_pos++;
-    if (num_non_pos > 2) {
-      return mat->c_tiny;
-    }
-    // If just one or two are non-positive then replace them with a tiny value
-    else if (num_non_pos > 0) {
-      // Unless already trying to extrapolate in which case return zero
-      if ((intp_rho < 0.f) || (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
-        return mat->c_tiny;
-      }
-      if (c_1 <= 0.f) c_1 = mat->c_tiny;
-      if (c_2 <= 0.f) c_2 = mat->c_tiny;
-      if (c_3 <= 0.f) c_3 = mat->c_tiny;
-      if (c_4 <= 0.f) c_4 = mat->c_tiny;
-    }
-
-    // Interpolate with the log values
-    c_1 = logf(c_1);
-    c_2 = logf(c_2);
-    c_3 = logf(c_3);
-    c_4 = logf(c_4);
-
-    // If below the minimum u at this rho then just use the lowest table values
-    if ((idx_rho > 0.f) &&
-        ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
-      intp_u_1 = 0;
-      intp_u_2 = 0;
-    }
-
-    c = (1.f - intp_rho) * ((1.f - intp_u_1) * c_1 + intp_u_1 * c_2) +
-        intp_rho * ((1.f - intp_u_2) * c_3 + intp_u_2 * c_4);
-
-    // Convert back from log
-    c = expf(c);
-
-    return c;
+    if (P_1 <= 0.f) P_1 = mat->P_tiny;
+    if (P_2 <= 0.f) P_2 = mat->P_tiny;
+    if (P_3 <= 0.f) P_3 = mat->P_tiny;
+    if (P_4 <= 0.f) P_4 = mat->P_tiny;
   }
 
-  // gas_soundspeed_from_pressure
-  INLINE static float SESAME_soundspeed_from_pressure(
-      float density, float P, const struct SESAME_params *mat) {
+  // Interpolate with the log values
+  P_1 = logf(P_1);
+  P_2 = logf(P_2);
+  P_3 = logf(P_3);
+  P_4 = logf(P_4);
 
-    error("This EOS function is not yet implemented!");
+  P = (1.f - intp_rho) * ((1.f - intp_u_1) * P_1 + intp_u_1 * P_2) +
+      intp_rho * ((1.f - intp_u_2) * P_3 + intp_u_2 * P_4);
 
+  // Convert back from log
+  P = expf(P);
+
+  return P;
+}
+
+// gas_internal_energy_from_pressure
+INLINE static float SESAME_internal_energy_from_pressure(
+    float density, float P, const struct SESAME_params *mat) {
+
+  error("This EOS function is not yet implemented!");
+
+  return 0.f;
+}
+
+// gas_soundspeed_from_internal_energy
+INLINE static float SESAME_soundspeed_from_internal_energy(
+    float density, float u, const struct SESAME_params *mat) {
+
+  float c, c_1, c_2, c_3, c_4;
+
+  if (u <= 0.f) {
     return 0.f;
   }
+
+  int idx_rho, idx_u_1, idx_u_2;
+  float intp_rho, intp_u_1, intp_u_2;
+  const float log_rho = logf(density);
+  const float log_u = logf(u);
+
+  // 2D interpolation (bilinear with log(rho), log(u)) to find c(rho, u))
+  // Density index
+  idx_rho =
+      find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
+
+  // Sp. int. energy at this and the next density (in relevant slice of u
+  // array)
+  idx_u_1 = find_value_in_monot_incr_array(
+      log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
+  idx_u_2 = find_value_in_monot_incr_array(
+      log_u, mat->table_log_u_rho_T + (idx_rho + 1) * mat->num_T, mat->num_T);
+
+  // If outside the table then extrapolate from the edge and edge-but-one
+  // values
+  if (idx_rho <= -1) {
+    idx_rho = 0;
+  } else if (idx_rho >= mat->num_rho) {
+    idx_rho = mat->num_rho - 2;
+  }
+  if (idx_u_1 <= -1) {
+    idx_u_1 = 0;
+  } else if (idx_u_1 >= mat->num_T) {
+    idx_u_1 = mat->num_T - 2;
+  }
+  if (idx_u_2 <= -1) {
+    idx_u_2 = 0;
+  } else if (idx_u_2 >= mat->num_T) {
+    idx_u_2 = mat->num_T - 2;
+  }
+
+  // Check for duplicates in SESAME tables before interpolation
+  if (mat->table_log_rho[idx_rho + 1] != mat->table_log_rho[idx_rho]) {
+    intp_rho = (log_rho - mat->table_log_rho[idx_rho]) /
+               (mat->table_log_rho[idx_rho + 1] - mat->table_log_rho[idx_rho]);
+  } else {
+    intp_rho = 1.f;
+  }
+  if (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] !=
+      mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) {
+    intp_u_1 =
+        (log_u - mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]) /
+        (mat->table_log_u_rho_T[idx_rho * mat->num_T + (idx_u_1 + 1)] -
+         mat->table_log_u_rho_T[idx_rho * mat->num_T + idx_u_1]);
+  } else {
+    intp_u_1 = 1.f;
+  }
+  if (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] !=
+      mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) {
+    intp_u_2 =
+        (log_u - mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]) /
+        (mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + (idx_u_2 + 1)] -
+         mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2]);
+  } else {
+    intp_u_2 = 1.f;
+  }
+
+  // Table values
+  c_1 = mat->table_c_rho_T[idx_rho * mat->num_T + idx_u_1];
+  c_2 = mat->table_c_rho_T[idx_rho * mat->num_T + idx_u_1 + 1];
+  c_3 = mat->table_c_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2];
+  c_4 = mat->table_c_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
+
+  // If more than two table values are non-positive then return zero
+  int num_non_pos = 0;
+  if (c_1 <= 0.f) num_non_pos++;
+  if (c_2 <= 0.f) num_non_pos++;
+  if (c_3 <= 0.f) num_non_pos++;
+  if (c_4 <= 0.f) num_non_pos++;
+  if (num_non_pos > 2) {
+    return mat->c_tiny;
+  }
+  // If just one or two are non-positive then replace them with a tiny value
+  else if (num_non_pos > 0) {
+    // Unless already trying to extrapolate in which case return zero
+    if ((intp_rho < 0.f) || (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
+      return mat->c_tiny;
+    }
+    if (c_1 <= 0.f) c_1 = mat->c_tiny;
+    if (c_2 <= 0.f) c_2 = mat->c_tiny;
+    if (c_3 <= 0.f) c_3 = mat->c_tiny;
+    if (c_4 <= 0.f) c_4 = mat->c_tiny;
+  }
+
+  // Interpolate with the log values
+  c_1 = logf(c_1);
+  c_2 = logf(c_2);
+  c_3 = logf(c_3);
+  c_4 = logf(c_4);
+
+  // If below the minimum u at this rho then just use the lowest table values
+  if ((idx_rho > 0.f) &&
+      ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+  }
+
+  c = (1.f - intp_rho) * ((1.f - intp_u_1) * c_1 + intp_u_1 * c_2) +
+      intp_rho * ((1.f - intp_u_2) * c_3 + intp_u_2 * c_4);
+
+  // Convert back from log
+  c = expf(c);
+
+  return c;
+}
+
+// gas_soundspeed_from_pressure
+INLINE static float SESAME_soundspeed_from_pressure(
+    float density, float P, const struct SESAME_params *mat) {
+
+  error("This EOS function is not yet implemented!");
+
+  return 0.f;
+}
 
 #endif /* SWIFT_SESAME_EQUATION_OF_STATE_H */
