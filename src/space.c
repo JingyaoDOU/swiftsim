@@ -754,7 +754,7 @@ void space_synchronize_particle_positions(struct space *s) {
 }
 
 void space_convert_quantities_mapper(void *restrict map_data, int count,
-                                     void *restrict extra_data, const struct unit_system *us) {
+                                     void *restrict extra_data) {
   struct space *s = (struct space *)extra_data;
   const struct cosmology *cosmo = s->e->cosmology;
   const struct hydro_props *hydro_props = s->e->hydro_properties;
@@ -766,7 +766,7 @@ void space_convert_quantities_mapper(void *restrict map_data, int count,
    * creation */
   for (int k = 0; k < count; k++) {
     if (parts[k].time_bin <= num_time_bins) {
-      hydro_convert_quantities(&parts[k], &xparts[k], cosmo, hydro_props, us);
+      hydro_convert_quantities(&parts[k], &xparts[k], cosmo, hydro_props);
       mhd_convert_quantities(&parts[k], &xparts[k], cosmo, hydro_props);
     }
   }
