@@ -305,6 +305,13 @@ INLINE static void convert_units_SESAME(struct SESAME_params *mat,
   struct unit_system si;
   units_init_si(&si);
 
+  // float *rho_unit, *u_unit;
+
+  //*rho_unit = logf(units_cgs_conversion_factor(us, UNIT_CONV_DENSITY) /
+  //                units_cgs_conversion_factor(&si, UNIT_CONV_DENSITY));
+  //*u_unit =
+  //    logf(units_cgs_conversion_factor(us, UNIT_CONV_ENERGY_PER_UNIT_MASS) /
+  //         units_cgs_conversion_factor(&si, UNIT_CONV_ENERGY_PER_UNIT_MASS));
   // Densities (log)
   for (int i_rho = 0; i_rho < mat->num_rho; i_rho++) {
     mat->table_log_rho[i_rho] +=
@@ -491,7 +498,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   float log_rho = logf(density);
   const float log_u = logf(u);
 
-  float *array;
+  float *array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
 
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
@@ -499,14 +506,9 @@ INLINE static float SESAME_pressure_from_internal_energy(
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
   if (idx_rho >= mat->num_rho) {
-    log_rho += logf(units_cgs_conversion_factor(us, UNIT_CONV_DENSITY) /
-                    units_cgs_conversion_factor(&si, UNIT_CONV_DENSITY));
+
     printf("rho = %f g/cc \n", expf(log_rho));
-    array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
     for (int i = 0; i < mat->num_T; i++) {
-      array[i] += logf(
-          units_cgs_conversion_factor(us, UNIT_CONV_ENERGY_PER_UNIT_MASS) /
-          units_cgs_conversion_factor(&si, UNIT_CONV_ENERGY_PER_UNIT_MASS));
       printf("%g ", expf(array[i]));
     }
     printf("\n");
