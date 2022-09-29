@@ -568,54 +568,73 @@ INLINE static float SESAME_pressure_from_internal_energy(
   P_4 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
 
   // If below the minimum u at this rho then just use the lowest table values
-  if (flagrho == 1) {
-    printf(
-        "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 = "
-        "%.7g, P_3 = %.7g, P_4 = %.7g\n",
-        intp_rho, intp_u_1, intp_u_2, P_1 * 9.3743E17, P_2 * 9.3743E17,
-        P_3 * 9.3743E17, P_4 * 9.3743E17);
-  }
+  // if (flagrho == 1) {
+  //   printf(
+  //       "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 =
+  //       "
+  //       "%.7g, P_3 = %.7g, P_4 = %.7g\n",
+  //       intp_rho, intp_u_1, intp_u_2, P_1 * 9.3743E17, P_2 * 9.3743E17,
+  //       P_3 * 9.3743E17, P_4 * 9.3743E17);
+  //   if ((P1==P3) || (P2==P4)){
+  //     printf("PRESSULE EQUAL\n");
+  //   }
+  // }
 
-  if ((idx_rho > 0.f) &&
+  // if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
-    intp_u_1 = 0;
-    intp_u_2 = 0;
-    printf("case1\n");
-  }
+        intp_u_1 = 0;
+        intp_u_2 = 0;
+        printf("case1\n");
+      }
 
-  // If more than two table values are non-positive then return zero
-  int num_non_pos = 0;
-  if (P_1 <= 0.f) num_non_pos++;
-  if (P_2 <= 0.f) num_non_pos++;
-  if (P_3 <= 0.f) num_non_pos++;
-  if (P_4 <= 0.f) num_non_pos++;
-  if (num_non_pos > 0) {
-    // If just one or two are non-positive then replace them with a tiny value
-    // Unless already trying to extrapolate in which case return zero
-    if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
-        (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
-      printf("case2\n");
-      return 0.f;
-    }
-    if (P_1 <= 0.f) P_1 = mat->P_tiny;
-    if (P_2 <= 0.f) P_2 = mat->P_tiny;
-    if (P_3 <= 0.f) P_3 = mat->P_tiny;
-    if (P_4 <= 0.f) P_4 = mat->P_tiny;
-  }
+      // If more than two table values are non-positive then return zero
+      int num_non_pos = 0;
+      if (P_1 <= 0.f) num_non_pos++;
+      if (P_2 <= 0.f) num_non_pos++;
+      if (P_3 <= 0.f) num_non_pos++;
+      if (P_4 <= 0.f) num_non_pos++;
+      if (num_non_pos > 0) {
+        // If just one or two are non-positive then replace them with a tiny
+        // value Unless already trying to extrapolate in which case return zero
+        if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
+            (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
+          printf("case2\n");
+          return 0.f;
+        }
+        if (P_1 <= 0.f) P_1 = mat->P_tiny;
+        if (P_2 <= 0.f) P_2 = mat->P_tiny;
+        if (P_3 <= 0.f) P_3 = mat->P_tiny;
+        if (P_4 <= 0.f) P_4 = mat->P_tiny;
+      }
 
-  // Interpolate with the log values
-  P_1 = logf(P_1);
-  P_2 = logf(P_2);
-  P_3 = logf(P_3);
-  P_4 = logf(P_4);
+      // Interpolate with the log values
+      P_1 = logf(P_1);
+      P_2 = logf(P_2);
+      P_3 = logf(P_3);
+      P_4 = logf(P_4);
 
-  P = (1.f - intp_rho) * ((1.f - intp_u_1) * P_1 + intp_u_1 * P_2) +
-      intp_rho * ((1.f - intp_u_2) * P_3 + intp_u_2 * P_4);
+      P = (1.f - intp_rho) * ((1.f - intp_u_1) * P_1 + intp_u_1 * P_2) +
+          intp_rho * ((1.f - intp_u_2) * P_3 + intp_u_2 * P_4);
 
-  // Convert back from log
-  P = expf(P);
+      // Convert back from log
+      P = expf(P);
+      if (flagrho == 1) {
+        printf(
+            "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 "
+            "= "
+            "%.7g, P_3 = %.7g, P_4 = %.7g, P = %.7g \n",
+            intp_rho, intp_u_1, intp_u_2, expf(P_1) * 9.3743E17,
+            expf(P_2) * 9.3743E17, expf(P_3) * 9.3743E17, expf(P_4) * 9.3743E17,
+            P * 9.3743E17);
+        if ((P1 == P3) || (P2 == P4)) {
+          printf("PRESSULE EQUAL\n");
+        }
+        if (intp_u_1 == intp_u_2) {
+          printf("intpu1=intpu2\n");
+        }
+      }
 
-  return P;
+      return P;
 }
 
 // gas_internal_energy_from_pressure
@@ -713,7 +732,8 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   if (num_non_pos > 2) {
     return mat->c_tiny;
   }
-  // If just one or two are non-positive then replace them with a tiny value
+  // If just one or two are non-positive then replace them with a tiny
+  // value
   else if (num_non_pos > 0) {
     // Unless already trying to extrapolate in which case return zero
     if ((intp_rho < 0.f) || (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
@@ -731,7 +751,8 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   c_3 = logf(c_3);
   c_4 = logf(c_4);
 
-  // If below the minimum u at this rho then just use the lowest table values
+  // If below the minimum u at this rho then just use the lowest table
+  // values
   if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
     intp_u_1 = 0;
