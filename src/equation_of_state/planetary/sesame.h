@@ -495,7 +495,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
   if (idx_rho >= mat->num_rho) {
-    printf("rho = %f g/cc \n", expf(rho));
+    printf("rho = %f g/cc \n", expf(density));
     array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
     for (int i = 0; i < mat->num_T; i++) {
       printf("%f ", array[i]);
