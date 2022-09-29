@@ -483,7 +483,7 @@ INLINE static float SESAME_entropy_from_internal_energy(
 INLINE static float SESAME_pressure_from_internal_energy(
     float density, float u, const struct SESAME_params *mat) {
 
-    float P, P_1, P_2, P_3, P_4;
+  float P, P_1, P_2, P_3, P_4;
 
   if (u <= 0.f) {
     return 0.f;
@@ -505,7 +505,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
     printf("rho = %f g/cc \n", expf(log_rho));
 
     for (int i = 0; i < mat->num_T; i++) {
-      printf("%.7g ", expf(array[i]));
+      printf("%.7g ", expf(*array[i]));
     }
     printf("\n");
     error("RHO OUT INDEX");
