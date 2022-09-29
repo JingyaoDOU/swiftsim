@@ -1443,7 +1443,7 @@ gas_pressure_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_SESAME_iron: 1");
 #endif
           return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.SESAME_iron);
+                                                      &eos.SESAME_iron, us);
           break;
 
         case eos_planetary_id_SESAME_basalt:
@@ -1454,7 +1454,7 @@ gas_pressure_from_internal_energy(float density, float u,
                 "1");
 #endif
           return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.SESAME_basalt);
+                                                      &eos.SESAME_basalt, us);
           break;
 
         case eos_planetary_id_SESAME_water:
@@ -1465,7 +1465,7 @@ gas_pressure_from_internal_energy(float density, float u,
                 "1");
 #endif
           return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.SESAME_water);
+                                                      &eos.SESAME_water, us);
           break;
 
         case eos_planetary_id_SS08_water:
@@ -1475,7 +1475,7 @@ gas_pressure_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_SS08_water: 1");
 #endif
           return SESAME_pressure_from_internal_energy(density, u,
-                                                      &eos.SS08_water);
+                                                      &eos.SS08_water, us);
           break;
 
         default:

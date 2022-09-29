@@ -126,9 +126,9 @@ hydro_get_drifted_physical_internal_energy(const struct part *restrict p,
  * @param p The particle of interest
  */
 __attribute__((always_inline)) INLINE static float hydro_get_comoving_pressure(
-    const struct part *restrict p) {
+    const struct part *restrict p, const struct unit_system *us) {
 
-  return gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+  return gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
 }
 
 /**
@@ -141,10 +141,11 @@ __attribute__((always_inline)) INLINE static float hydro_get_comoving_pressure(
  * @param cosmo The cosmological model.
  */
 __attribute__((always_inline)) INLINE static float hydro_get_physical_pressure(
-    const struct part *restrict p, const struct cosmology *cosmo) {
+    const struct part *restrict p, const struct cosmology *cosmo,
+    const struct unit_system *us) {
 
   return cosmo->a_factor_pressure *
-         gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+         gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
 }
 
 /**
@@ -385,7 +386,8 @@ hydro_set_physical_internal_energy(struct part *p, struct xpart *xp,
 __attribute__((always_inline)) INLINE static void
 hydro_set_drifted_physical_internal_energy(struct part *p,
                                            const struct cosmology *cosmo,
-                                           const float u) {
+                                           const float u,
+                                           const struct unit_system *us) {
 
   p->u = u / cosmo->a_factor_internal_energy;
 
@@ -393,7 +395,7 @@ hydro_set_drifted_physical_internal_energy(struct part *p,
 
   /* Compute the sound speed */
   const float pressure =
-      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
   const float soundspeed = hydro_get_comoving_soundspeed(p);
 
   /* Update variables. */
@@ -664,7 +666,7 @@ __attribute__((always_inline)) INLINE static void hydro_part_has_no_neighbours(
 __attribute__((always_inline)) INLINE static void hydro_prepare_force(
     struct part *restrict p, struct xpart *restrict xp,
     const struct cosmology *cosmo, const struct hydro_props *hydro_props,
-    const float dt_alpha) {
+    const float dt_alpha, const struct unit_system *us) {
 
   const float fac_Balsara_eps = cosmo->a_factor_Balsara_eps;
 
@@ -685,7 +687,7 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
 
   /* Compute the pressure */
   const float pressure =
-      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
 
   /* Compute the sound speed */
   const float soundspeed =
@@ -773,7 +775,7 @@ __attribute__((always_inline)) INLINE static void hydro_reset_acceleration(
  */
 __attribute__((always_inline)) INLINE static void hydro_reset_predicted_values(
     struct part *restrict p, const struct xpart *restrict xp,
-    const struct cosmology *cosmo) {
+    const struct cosmology *cosmo, const struct unit_system *us) {
 
   /* Re-set the predicted velocities */
   p->v[0] = xp->v_full[0];
@@ -785,7 +787,7 @@ __attribute__((always_inline)) INLINE static void hydro_reset_predicted_values(
 
   /* Compute the pressure */
   const float pressure =
-      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
 
   /* Compute the sound speed */
   const float soundspeed =
@@ -818,7 +820,8 @@ __attribute__((always_inline)) INLINE static void hydro_predict_extra(
     struct part *restrict p, const struct xpart *restrict xp, float dt_drift,
     float dt_therm, const struct cosmology *cosmo,
     const struct hydro_props *hydro_props,
-    const struct entropy_floor_properties *floor_props) {
+    const struct entropy_floor_properties *floor_props,
+    const struct unit_system *us) {
 
   /* Predict the internal energy */
   p->u += p->u_dt * dt_therm;
@@ -847,7 +850,7 @@ __attribute__((always_inline)) INLINE static void hydro_predict_extra(
 
   /* Compute the new pressure */
   const float pressure =
-      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
 
   /* Compute the new sound speed */
   const float soundspeed =
@@ -926,11 +929,12 @@ __attribute__((always_inline)) INLINE static void hydro_kick_extra(
  */
 __attribute__((always_inline)) INLINE static void hydro_convert_quantities(
     struct part *restrict p, struct xpart *restrict xp,
-    const struct cosmology *cosmo, const struct hydro_props *hydro_props) {
+    const struct cosmology *cosmo, const struct hydro_props *hydro_props,
+    const struct unit_system *us) {
 
   /* Compute the pressure */
   const float pressure =
-      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id, us);
 
   /* Compute the sound speed */
   const float soundspeed =
