@@ -498,7 +498,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
-  float *array = mat->table_log_u_rho_T + (idx_rho - 2) * mat->num_T;
+  float *array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
 
   if (idx_rho >= mat->num_rho) {
 
