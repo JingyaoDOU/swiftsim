@@ -493,7 +493,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   float intp_rho, intp_u_1, intp_u_2;
   const float log_rho = logf(density);
   const float log_u = logf(u);
-
+  int short flagrho;
   // 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u))
   // Density index
   idx_rho =
@@ -501,14 +501,14 @@ INLINE static float SESAME_pressure_from_internal_energy(
   float *array = mat->table_log_u_rho_T + idx_rho * mat->num_T;
 
   if (idx_rho >= mat->num_rho) {
-
+    flagrho = 1;
     printf("rho = %f g/cc \n", expf(log_rho));
 
-    for (int i = 0; i < mat->num_T; i++) {
-      printf("%.7g ", expf(array[i]));
-    }
-    printf("\n");
-    error("RHO OUT INDEX");
+    // for (int i = 0; i < mat->num_T; i++) {
+    //   printf("%.7g ", expf(array[i]));
+    // }
+    // printf("\n");
+    // error("RHO OUT INDEX");
   }
   // Sp. int. energy at this and the next density (in relevant slice of u
   // array)
@@ -568,10 +568,18 @@ INLINE static float SESAME_pressure_from_internal_energy(
   P_4 = mat->table_P_rho_T[(idx_rho + 1) * mat->num_T + idx_u_2 + 1];
 
   // If below the minimum u at this rho then just use the lowest table values
+  if (flagrho == 1) {
+    printf(
+        "intp_rho = %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g,P_1 = %.7g, P_2 = "
+        "%.7g, P_3 = %.7g, P_4 = %.7g\n",
+        intp_rho, intp_u_1, intp_u_2, P_1, P_2, P_3, P_4);
+  }
+
   if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
+    printf("case1");
   }
 
   // If more than two table values are non-positive then return zero
@@ -585,6 +593,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
     // Unless already trying to extrapolate in which case return zero
     if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
         (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
+      printf("case2");
       return 0.f;
     }
     if (P_1 <= 0.f) P_1 = mat->P_tiny;
