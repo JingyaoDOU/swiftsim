@@ -572,7 +572,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
           "intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, P_1 = %.7g, P_2 = "
           "%.7g, P_3 = %.7g, P_4 "
           "= %.7g\n",
-          intp_rho, intp_u1, intp_u_2, P_1 * 9.37435E17, P_2 * 9.37435E17,
+          intp_rho, intp_u_1, intp_u_2, P_1 * 9.37435E17, P_2 * 9.37435E17,
           P_3 * 9.37435E17, P_4 * 9.37435E17);
 
       return 0.f;
@@ -699,9 +699,10 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   else if (num_non_pos > 0) {
     // Unless already trying to extrapolate in which case return zero
     if ((intp_rho < 0.f) || (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
+      printf("CScase2 ");
       return mat->c_tiny;
     }
-    printf("CScase2 ");
+    printf("CScase3 ");
 
     if (c_1 <= 0.f) c_1 = mat->c_tiny;
     if (c_2 <= 0.f) c_2 = mat->c_tiny;
@@ -722,7 +723,7 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
         "intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, c1 = %.7g, c2 = "
         "%.7g, c3 = %.7g, c4 "
         "= %.7g\n",
-        intp_rho, intp_u1, intp_u_2, expf(c_1) * 6371000, expf(c_2) * 6371000,
+        intp_rho, intp_u_1, intp_u_2, expf(c_1) * 6371000, expf(c_2) * 6371000,
         expf(c_3) * 6371000, expf(c_4) * 6371000);
     intp_u_1 = 0;
     intp_u_2 = 0;
