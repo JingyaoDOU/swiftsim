@@ -491,7 +491,9 @@ INLINE static float SESAME_pressure_from_internal_energy(
   // Density index
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
-
+  if (idx_rho >= mat->num_rho) {
+    error("Prho out");
+  }
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
       log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
@@ -552,6 +554,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (P_1 > P_2) || (P_3 > P_4))) {
     intp_u_1 = 0;
     intp_u_2 = 0;
+    printf("Pcase1");
   }
 
   // If more than two table values are non-positive then return zero
@@ -561,6 +564,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   if (P_3 <= 0.f) num_non_pos++;
   if (P_4 <= 0.f) num_non_pos++;
   if (num_non_pos > 0) {
+    printf("Pcase2");
     // If just one or two are non-positive then replace them with a tiny value
     // Unless already trying to extrapolate in which case return zero
     if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
@@ -617,6 +621,9 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
+  if (idx_rho >= mat->num_rho) {
+    error("CSrho out");
+  }
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
       log_u, mat->table_log_u_rho_T + idx_rho * mat->num_T, mat->num_T);
@@ -679,12 +686,14 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   if (c_3 <= 0.f) num_non_pos++;
   if (c_4 <= 0.f) num_non_pos++;
   if (num_non_pos > 2) {
+    printf("CScase1");
     return mat->c_tiny;
   }
   // If just one or two are non-positive then replace them with a tiny value
   else if (num_non_pos > 0) {
     // Unless already trying to extrapolate in which case return zero
     if ((intp_rho < 0.f) || (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
+      printf("CScase2");
       return mat->c_tiny;
     }
     if (c_1 <= 0.f) c_1 = mat->c_tiny;
@@ -702,6 +711,7 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   // If below the minimum u at this rho then just use the lowest table values
   if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
+    printf("CScase3");
     intp_u_1 = 0;
     intp_u_2 = 0;
   }
