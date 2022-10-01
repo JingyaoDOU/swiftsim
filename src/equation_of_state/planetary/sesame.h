@@ -720,14 +720,18 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   // If below the minimum u at this rho then just use the lowest table values
   if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
-    printf(
-        "Density = %.7g ,intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, c1 "
-        "= %.7g, c2 = "
-        "%.7g, c3 = %.7g, c4 "
-        "= %.7g, matid = %d \n",
-        expf(log_rho) * 23095.43, intp_rho, intp_u_1, intp_u_2,
-        expf(c_1) * 6371000, expf(c_2) * 6371000, expf(c_3) * 6371000,
-        expf(c_4) * 6371000, mat->mat_id);
+    if (mat->mat_id != 400) {
+      printf(
+          "Density = %.7g ,intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, "
+          "c1 "
+          "= %.7g, c2 = "
+          "%.7g, c3 = %.7g, c4 "
+          "= %.7g, matid = %d \n",
+          expf(log_rho) * 23095.43, intp_rho, intp_u_1, intp_u_2,
+          expf(c_1) * 6371000, expf(c_2) * 6371000, expf(c_3) * 6371000,
+          expf(c_4) * 6371000, mat->mat_id);
+    }
+
     intp_u_1 = 0;
     intp_u_2 = 0;
   }
