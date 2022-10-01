@@ -492,7 +492,7 @@ INLINE static float SESAME_pressure_from_internal_energy(
   idx_rho =
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
   if (idx_rho >= mat->num_rho) {
-    printf("P:rhoOUT = %.7g\n", expf(log_rho) * 23095.43);
+    printf("matid=%d, PrhoOUT = %.7g\n", mat->mat_id, expf(log_rho) * 23095.43);
   }
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -569,11 +569,12 @@ INLINE static float SESAME_pressure_from_internal_energy(
     if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
         (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
       printf(
-          "intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, P_1 = %.7g, P_2 = "
-          "%.7g, P_3 = %.7g, P_4 "
-          "= %.7g\n",
-          intp_rho, intp_u_1, intp_u_2, P_1 * 9.37435E17, P_2 * 9.37435E17,
-          P_3 * 9.37435E17, P_4 * 9.37435E17);
+          "Density= %.7g,intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, P_1 "
+          "= %.7g, P_2 = "
+          "%.7g, P_3 = %.7g, P_4, matid=%d \n",
+          "= %.7g\n", expf(log_rho) * 23095.43, intp_rho, intp_u_1, intp_u_2,
+          P_1 * 9.37435E17, P_2 * 9.37435E17, P_3 * 9.37435E17,
+          P_4 * 9.37435E17, mat->mat_id);
 
       return 0.f;
     }
@@ -628,7 +629,8 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
       find_value_in_monot_incr_array(log_rho, mat->table_log_rho, mat->num_rho);
 
   if (idx_rho >= mat->num_rho) {
-    error("CSrho out ");
+    printf("matid=%d, CSrhoOUT = %.7g\n", mat->mat_id,
+           expf(log_rho) * 23095.43);
   }
   // Sp. int. energy at this and the next density (in relevant slice of u array)
   idx_u_1 = find_value_in_monot_incr_array(
@@ -720,11 +722,13 @@ INLINE static float SESAME_soundspeed_from_internal_energy(
   if ((idx_rho > 0.f) &&
       ((intp_u_1 < 0.f) || (intp_u_2 < 0.f) || (c_1 > c_2) || (c_3 > c_4))) {
     printf(
-        "intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, c1 = %.7g, c2 = "
+        "Density = %.7g ,intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, c1 "
+        "= %.7g, c2 = "
         "%.7g, c3 = %.7g, c4 "
-        "= %.7g\n",
-        intp_rho, intp_u_1, intp_u_2, expf(c_1) * 6371000, expf(c_2) * 6371000,
-        expf(c_3) * 6371000, expf(c_4) * 6371000);
+        "= %.7g, matid=%d \n",
+        expf(log_rho) * 23095.43, intp_rho, intp_u_1, intp_u_2,
+        expf(c_1) * 6371000, expf(c_2) * 6371000, expf(c_3) * 6371000,
+        expf(c_4) * 6371000, mat->mat_id);
     intp_u_1 = 0;
     intp_u_2 = 0;
   }
