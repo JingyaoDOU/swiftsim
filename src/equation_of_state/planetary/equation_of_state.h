@@ -1911,7 +1911,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_SESAME_iron: 1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.SESAME_iron, &c_diff);
+              density, u, &eos.SESAME_iron, c_diff);
           break;
 
         case eos_planetary_id_SESAME_basalt:
@@ -1922,7 +1922,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.SESAME_basalt, &c_diff);
+              density, u, &eos.SESAME_basalt, c_diff);
           break;
 
         case eos_planetary_id_SESAME_water:
@@ -1933,7 +1933,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.SESAME_water, &c_diff);
+              density, u, &eos.SESAME_water, c_diff);
           break;
 
         case eos_planetary_id_SS08_water:
@@ -1943,7 +1943,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_SS08_water: 1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.SS08_water, &c_diff);
+              density, u, &eos.SS08_water, c_diff);
           break;
 
         default:
@@ -1967,7 +1967,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS:planetary_use_ANEOS_forsterite: 1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.ANEOS_forsterite, &c_diff);
+              density, u, &eos.ANEOS_forsterite, c_diff);
           break;
 
         case eos_planetary_id_ANEOS_iron:
@@ -1977,7 +1977,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_ANEOS_iron: 1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.ANEOS_iron, &c_diff);
+              density, u, &eos.ANEOS_iron, c_diff);
           break;
 
         case eos_planetary_id_ANEOS_Fe85Si15:
@@ -1988,7 +1988,7 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "1");
 #endif
           return SESAME_soundspeed_from_internal_energy(
-              density, u, &eos.ANEOS_Fe85Si15, &c_diff);
+              density, u, &eos.ANEOS_Fe85Si15, c_diff);
           break;
 
         default:
