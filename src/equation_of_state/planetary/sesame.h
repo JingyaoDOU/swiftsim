@@ -569,10 +569,9 @@ INLINE static float SESAME_pressure_from_internal_energy(
     if ((num_non_pos > 2) || (mat->P_tiny == 0.f) || (intp_rho < 0.f) ||
         (intp_u_1 < 0.f) || (intp_u_2 < 0.f)) {
       printf(
-          "Density= %.7g,intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, P_1 "
-          "= %.7g, P_2 = "
-          "%.7g, P_3 = %.7g, P_4 = %.7g, matid = %d \n",
-          , expf(log_rho) * 23095.43, intp_rho, intp_u_1, intp_u_2,
+          "Density= %.7g, intp_rho= %.5g, intp_u_1 = %.5g, intp_u_2 = %.5g, "
+          "P_1 = %.7g, P_2 = %.7g, P_3 = %.7g, P_4 = %.7g, matid = %d \n",
+          expf(log_rho) * 23095.43, intp_rho, intp_u_1, intp_u_2,
           P_1 * 9.37435E17, P_2 * 9.37435E17, P_3 * 9.37435E17,
           P_4 * 9.37435E17, mat->mat_id);
 
