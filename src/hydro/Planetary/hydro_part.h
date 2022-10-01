@@ -185,6 +185,8 @@ struct part {
       /*! Balsara switch */
       float balsara;
 
+      float c_diff; /* sound speed difference */
+
     } force;
   };
 

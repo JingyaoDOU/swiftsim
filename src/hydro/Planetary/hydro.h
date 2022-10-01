@@ -223,6 +223,12 @@ hydro_get_comoving_soundspeed(const struct part *restrict p) {
   return p->force.soundspeed;
 }
 
+__attribute__((always_inline)) INLINE static float hydro_get_comoving_c_diff(
+    const struct part *restrict p) {
+
+  return p->force.c_diff;
+}
+
 /**
  * @brief Returns the physical sound speed of a particle
  *
@@ -688,8 +694,8 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
       gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
 
   /* Compute the sound speed */
-  const float soundspeed =
-      gas_soundspeed_from_internal_energy(p->rho, p->u, p->mat_id);
+  const float soundspeed = gas_soundspeed_from_internal_energy(
+      p->rho, p->u, p->mat_id, p->force.c_diff);
 
   /* Compute the "grad h" term  - Note here that we have \tilde{x}
    * as 1 as we use the local number density to find neighbours. This
@@ -788,8 +794,8 @@ __attribute__((always_inline)) INLINE static void hydro_reset_predicted_values(
       gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
 
   /* Compute the sound speed */
-  const float soundspeed =
-      gas_soundspeed_from_internal_energy(p->rho, p->u, p->mat_id);
+  const float soundspeed = gas_soundspeed_from_internal_energy(
+      p->rho, p->u, p->mat_id, p->force.c_diff);
 
   p->force.pressure = pressure;
   p->force.soundspeed = soundspeed;
@@ -850,8 +856,8 @@ __attribute__((always_inline)) INLINE static void hydro_predict_extra(
       gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
 
   /* Compute the new sound speed */
-  const float soundspeed =
-      gas_soundspeed_from_internal_energy(p->rho, p->u, p->mat_id);
+  const float soundspeed = gas_soundspeed_from_internal_energy(
+      p->rho, p->u, p->mat_id, p->force.c_diff);
 
   p->force.pressure = pressure;
   p->force.soundspeed = soundspeed;
@@ -933,8 +939,8 @@ __attribute__((always_inline)) INLINE static void hydro_convert_quantities(
       gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
 
   /* Compute the sound speed */
-  const float soundspeed =
-      gas_soundspeed_from_internal_energy(p->rho, p->u, p->mat_id);
+  const float soundspeed = gas_soundspeed_from_internal_energy(
+      p->rho, p->u, p->mat_id, p->force.c_diff);
 
   p->force.pressure = pressure;
   p->force.soundspeed = soundspeed;

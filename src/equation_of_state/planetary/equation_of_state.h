@@ -1779,7 +1779,8 @@ gas_internal_energy_from_pressure(float density, float P,
  */
 __attribute__((always_inline)) INLINE static float
 gas_soundspeed_from_internal_energy(float density, float u,
-                                    enum eos_planetary_material_id mat_id) {
+                                    enum eos_planetary_material_id mat_id,
+                                    float *c_diff) {
 
   const enum eos_planetary_type_id type =
       (enum eos_planetary_type_id)(mat_id / eos_planetary_type_factor);
@@ -1909,8 +1910,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
             error(
                 "EoS not enabled. Please set EoS:planetary_use_SESAME_iron: 1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.SESAME_iron);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.SESAME_iron, &c_diff);
           break;
 
         case eos_planetary_id_SESAME_basalt:
@@ -1920,8 +1921,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_SESAME_basalt: "
                 "1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.SESAME_basalt);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.SESAME_basalt, &c_diff);
           break;
 
         case eos_planetary_id_SESAME_water:
@@ -1931,8 +1932,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_SESAME_water: "
                 "1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.SESAME_water);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.SESAME_water, &c_diff);
           break;
 
         case eos_planetary_id_SS08_water:
@@ -1941,8 +1942,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
             error(
                 "EoS not enabled. Please set EoS:planetary_use_SS08_water: 1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.SS08_water);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.SS08_water, &c_diff);
           break;
 
         default:
@@ -1965,8 +1966,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set "
                 "EoS:planetary_use_ANEOS_forsterite: 1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.ANEOS_forsterite);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.ANEOS_forsterite, &c_diff);
           break;
 
         case eos_planetary_id_ANEOS_iron:
@@ -1975,8 +1976,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
             error(
                 "EoS not enabled. Please set EoS:planetary_use_ANEOS_iron: 1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.ANEOS_iron);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.ANEOS_iron, &c_diff);
           break;
 
         case eos_planetary_id_ANEOS_Fe85Si15:
@@ -1986,8 +1987,8 @@ gas_soundspeed_from_internal_energy(float density, float u,
                 "EoS not enabled. Please set EoS:planetary_use_ANEOS_Fe85Si15: "
                 "1");
 #endif
-          return SESAME_soundspeed_from_internal_energy(density, u,
-                                                        &eos.ANEOS_Fe85Si15);
+          return SESAME_soundspeed_from_internal_energy(
+              density, u, &eos.ANEOS_Fe85Si15, &c_diff);
           break;
 
         default:
