@@ -437,16 +437,11 @@ INLINE static float SESAME_internal_energy_from_entropy(
   log_u_4 = mat->table_log_u_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1];
 
   // If below the minimum s at this rho then just use the lowest table values
-  if ((idx_rho > 0.f) && ((intp_s_1 < 0.f) || (intp_s_2 < 0.f) ||
-                          (log_u_1 > log_u_2) || (log_u_3 > log_u_4))) {
-    intp_s_1 = 0;
-    intp_s_2 = 0;
-  }
-
-  // Interpolate with the log values
-  // u = (1.f - intp_rho) * ((1.f - intp_s_1) * log_u_1 + intp_s_1 * log_u_2) +
-  //     intp_rho * ((1.f - intp_s_2) * log_u_3 + intp_s_2 * log_u_4);
-
+  // if ((idx_rho > 0.f) && ((intp_s_1 < 0.f) || (intp_s_2 < 0.f) ||
+  //                         (log_u_1 > log_u_2) || (log_u_3 > log_u_4))) {
+  //   intp_s_1 = 0;
+  //   intp_s_2 = 0;
+  // }
   if ((flag1 == 1) || (flag2 == 1)) {
     intp_s_1 = 1;
     intp_s_2 = 1;
@@ -456,6 +451,11 @@ INLINE static float SESAME_internal_energy_from_entropy(
     intp_s_1 = 0;
     intp_s_2 = 0;
   }
+
+  Interpolate with the log values u =
+      (1.f - intp_rho) * ((1.f - intp_s_1) * log_u_1 + intp_s_1 * log_u_2) +
+      intp_rho * ((1.f - intp_s_2) * log_u_3 + intp_s_2 * log_u_4);
+
   // Convert back from log
   u = expf(u);
 
