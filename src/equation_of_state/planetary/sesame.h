@@ -371,11 +371,10 @@ INLINE static float SESAME_internal_energy_from_entropy(
 
   if (idx_rho <= -1) {
     idx_rho = 0;
+    error("Density too small!!! lower than the table edge");
   } else if (idx_rho >= mat->num_rho) {
     idx_rho = mat->num_rho - 2;
-    log_rho =
-        mat->table_log_rho[idx_rho +
-                           1];  // asign rho the value of the edge of the table
+    error("Density too BIG!!! higher than the table edge");
   }
 
   // Sp. entropy at this and the next density (in relevant slice of s array)
@@ -392,20 +391,17 @@ INLINE static float SESAME_internal_energy_from_entropy(
   }*/
   if (idx_s_1 <= -1) {
     idx_s_1 = 0;
+    flag1 = -1;
   } else if (idx_s_1 >= mat->num_T) {
     idx_s_1 = mat->num_T - 2;
     flag1 = 1;
   }
   if (idx_s_2 <= -1) {
     idx_s_2 = 0;
+    flag2 = -1;
   } else if (idx_s_2 >= mat->num_T) {
     idx_s_2 = mat->num_T - 2;
     flag2 = 1;
-  }
-  if ((flag1 == 1) && (flag2 == 1)) {
-    log_s =
-        max(mat->table_log_s_rho_T[idx_rho * mat->num_T + idx_s_1 + 1],
-            mat->table_log_s_rho_T[(idx_rho + 1) * mat->num_T + idx_s_2 + 1]);
   }
 
   // Check for duplicates in SESAME tables before interpolation
@@ -448,9 +444,18 @@ INLINE static float SESAME_internal_energy_from_entropy(
   }
 
   // Interpolate with the log values
-  u = (1.f - intp_rho) * ((1.f - intp_s_1) * log_u_1 + intp_s_1 * log_u_2) +
-      intp_rho * ((1.f - intp_s_2) * log_u_3 + intp_s_2 * log_u_4);
+  // u = (1.f - intp_rho) * ((1.f - intp_s_1) * log_u_1 + intp_s_1 * log_u_2) +
+  //     intp_rho * ((1.f - intp_s_2) * log_u_3 + intp_s_2 * log_u_4);
 
+  if ((flag1 == 1) || (flag2 == 1)) {
+    intp_u_1 = 1;
+    intp_u_2 = 1;
+  }
+
+  if ((flag1 == -1) || (flag2 == -1)) {
+    intp_u_1 = 0;
+    intp_u_2 = 0;
+  }
   // Convert back from log
   u = expf(u);
 
