@@ -448,13 +448,13 @@ INLINE static float SESAME_internal_energy_from_entropy(
   //     intp_rho * ((1.f - intp_s_2) * log_u_3 + intp_s_2 * log_u_4);
 
   if ((flag1 == 1) || (flag2 == 1)) {
-    intp_u_1 = 1;
-    intp_u_2 = 1;
+    intp_s_1 = 1;
+    intp_s_2 = 1;
   }
 
   if ((flag1 == -1) || (flag2 == -1)) {
-    intp_u_1 = 0;
-    intp_u_2 = 0;
+    intp_s_1 = 0;
+    intp_s_2 = 0;
   }
   // Convert back from log
   u = expf(u);
