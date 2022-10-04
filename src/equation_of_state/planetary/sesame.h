@@ -452,8 +452,7 @@ INLINE static float SESAME_internal_energy_from_entropy(
     intp_s_2 = 0;
   }
 
-  Interpolate with the log values u =
-      (1.f - intp_rho) * ((1.f - intp_s_1) * log_u_1 + intp_s_1 * log_u_2) +
+  u = (1.f - intp_rho) * ((1.f - intp_s_1) * log_u_1 + intp_s_1 * log_u_2) +
       intp_rho * ((1.f - intp_s_2) * log_u_3 + intp_s_2 * log_u_4);
 
   // Convert back from log
