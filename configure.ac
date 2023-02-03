@@ -405,6 +405,20 @@ elif test "$stars_density_checks" != "no"; then
    AC_DEFINE_UNQUOTED([SWIFT_STARS_DENSITY_CHECKS], [$enableval] ,[Enable stars density brute-force checks])
 fi
 
+# Check if ghost statistics are enabled
+AC_ARG_ENABLE([ghost-statistics],
+   [AS_HELP_STRING([--enable-ghost-statistics],
+     [Gather statistics about the ghost iterations for hydro, stars and black holes in N bins @<:@N@:>@]
+   )],
+   [ghost_stats="$enableval"],
+   [ghost_stats="no"]
+)
+if test "$ghost_stats" == "yes"; then
+   AC_MSG_ERROR(Need to specify the number of bins when using --enable-ghost-statistics!)
+elif test "$ghost_stats" != "no"; then
+   AC_DEFINE_UNQUOTED([SWIFT_GHOST_STATS], [$enableval] ,[Enable ghost statistics for hydro, stars and black holes])
+fi
+
 # Check whether we want to switch on glass making
 AC_ARG_ENABLE([glass-making],
    [AS_HELP_STRING([--enable-glass-making],
@@ -858,10 +872,11 @@ AH_VERBATIM([__STDC_FORMAT_MACROS],
 # Check for FFTW. We test for this in the standard directories by default,
 # and only disable if using --with-fftw=no or --without-fftw. When a value
 # is given FFTW must be found.
-# If FFTW is found, we check whether this is the threaded version.
+# If FFTW is found, we check whether this is the threaded or openmp version.
 have_fftw="no"
 have_mpi_fftw="no"
 have_threaded_fftw="no"
+have_openmp_fftw="no"
 AC_ARG_WITH([fftw],
     [AS_HELP_STRING([--with-fftw=PATH],
        [root directory where fftw is installed @<:@yes/no@:>@]
@@ -914,7 +929,7 @@ if test "x$with_fftw" != "xno"; then
 
       # Verify that the library is threaded
       AC_CHECK_LIB([fftw3],[fftw_init_threads],[have_threaded_fftw="yes"],
-		   [have_threaded_fftw="no"], $FFTW_THREADED_LIBS)
+      		   [have_threaded_fftw="no"], $FFTW_THREADED_LIBS)
 
       # If found, update things
       if test "x$have_threaded_fftw" = "xyes"; then
@@ -922,7 +937,31 @@ if test "x$with_fftw" != "xno"; then
          FFTW_LIBS=$FFTW_THREADED_LIBS
          FFTW_INCS=$FFTW_THREADED_INCS
 
+      else
+
+         # Same checks for OpenMP if preferred threaded failed.
+         if test "x$with_fftw" != "xyes" -a "x$with_fftw" != "xtest" -a "x$with_fftw" != "x"; then
+            FFTW_OPENMP_LIBS="-L$with_fftw/lib -lfftw3_omp -lfftw3"
+            FFTW_OPENMP_INCS="-I$with_fftw/include"
+         else
+            FFTW_OPENMP_LIBS="-lfftw3_omp -lfftw3"
+            FFTW_OPENMP_INCS=""
+         fi
+
+         # Verify that the library works. Note requires AC_OPENMP called above.
+         AC_CHECK_LIB([fftw3],[fftw_init_threads],[have_openmp_fftw="yes"],
+		      [have_openmp_fftw="no"], $FFTW_OPENMP_LIBS)
+
+         # If found, update things
+         if test "x$have_openmp_fftw" = "xyes"; then
+            #  Note OpenMP and pthreads use mostly the same calls, so define both.
+            AC_DEFINE([HAVE_THREADED_FFTW],1,[The threaded OpenMP FFTW library appears to be present.])
+            AC_DEFINE([HAVE_OPENMP_FFTW],1,[The OpenMP FFTW library appears to be present.])
+            FFTW_LIBS=$FFTW_OPENMP_LIBS
+            FFTW_INCS=$FFTW_OPENMP_INCS
+         fi
       fi
+
    fi
 
    # If MPI mesh gravity is not disabled, check whether we have the MPI version of FFTW
@@ -2288,6 +2327,11 @@ case "$with_cooling" in
       with_cooling_name=$with_cooling
    ;;
    grackle_*)
+
+      if test "$have_grackle" != "yes"; then
+        AC_MSG_ERROR([Grackle cooling: You need the grackle library for Grackle cooling. (--with-grackle=PATH)])
+      fi
+
       AC_DEFINE([COOLING_GRACKLE], [1], [Cooling via the grackle library])
       primordial_chemistry=${with_cooling#*_}
       AC_DEFINE_UNQUOTED([COOLING_GRACKLE_MODE], [$primordial_chemistry], [Grackle chemistry network])
@@ -2361,7 +2405,7 @@ esac
 #  Extra fields added to snapshots at i/o time
 AC_ARG_WITH([extra_io],
    [AS_HELP_STRING([--with-extra-io=<function>],
-      [chemistry function @<:@none, EAGLE default: none@:>@]
+      [Extra i/o field: @<:@none, EAGLE default: none@:>@]
    )],
    [with_extra_io="$withval"],
    [with_extra_io="none"]
@@ -2489,7 +2533,7 @@ AC_DEFINE_UNQUOTED([FEEDBACK_NR_RAYS_AGN], [$with_number_of_AGN_rays], [Number o
 # Black hole model.
 AC_ARG_WITH([black-holes],
    [AS_HELP_STRING([--with-black-holes=<model>],
-      [Black holes model to use @<:@none, EAGLE default: none@:>@]
+      [Black holes model to use @<:@none, EAGLE, SPIN_JET default: none@:>@]
    )],
    [with_black_holes="$withval"],
    [with_black_holes="none"]
@@ -2927,7 +2971,7 @@ AC_MSG_RESULT([
     - parallel          : $have_parallel_hdf5
    METIS/ParMETIS       : $have_metis / $have_parmetis
    FFTW3 enabled        : $have_fftw   
-    - threaded          : $have_threaded_fftw
+    - threaded/openmp   : $have_threaded_fftw / $have_openmp_fftw 
     - MPI               : $have_mpi_fftw
     - ARM               : $have_arm_fftw
    GSL enabled          : $have_gsl
@@ -2984,6 +3028,7 @@ AC_MSG_RESULT([
    Boundary particles          : $boundary_particles
    Fixed boundary particles    : $fixed_boundary_particles
    Planetary fixed entropy     : $planetary_fixed_entropy
+   Ghost statistics            : $ghost_stats
 
    Continuous Sim. Data Stream : $with_csds
 
