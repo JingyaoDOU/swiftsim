@@ -181,9 +181,9 @@ INLINE static void convert_units_HM80(struct HM80_params *mat,
 INLINE static float HM80_internal_energy_from_entropy(
     float density, float entropy, const struct HM80_params *mat) {
 
-  error("This EOS function is not yet implemented!");
+  // error("This EOS function is not yet implemented!");
 
-  return 0.f;
+  return entropy;
 }
 
 // gas_pressure_from_entropy
@@ -313,8 +313,8 @@ INLINE static float HM80_soundspeed_from_pressure(
 INLINE static float HM80_temperature_from_internal_energy(
     float density, float u, const struct HM80_params *mat) {
 
-  error("This EOS function is not yet implemented!");  
-    
+  error("This EOS function is not yet implemented!");
+
   return 0.f;
 }
 
