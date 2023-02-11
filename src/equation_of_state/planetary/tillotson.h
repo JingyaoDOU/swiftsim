@@ -218,9 +218,9 @@ INLINE static void convert_units_Til(struct Til_params *mat,
 INLINE static float Til_internal_energy_from_entropy(
     float density, float entropy, const struct Til_params *mat) {
 
-  error("This EOS function is not yet implemented!");
+  //error("This EOS function is not yet implemented!");
 
-  return 0.f;
+  return entropy;
 }
 
 // gas_pressure_from_entropy
