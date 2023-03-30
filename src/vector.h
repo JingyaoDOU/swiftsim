@@ -427,7 +427,6 @@
 #define vec_ftoi(a) vcvtq_s32_f32(a)
 #define vec_fmin(a, b) vpminq_f32(a, b)
 #define vec_fmax(a, b) vpmaxq_f32(a, b)
-
 #define vec_fabs(a) vabsq_f32(a)
 #define vec_floor(a) vcvtq_f32_s32(vcvtmq_s32_f32(a))
 #define vec_cmp_gt(a, b) vcgtzq_f32(vec_sub(a, b))
@@ -441,7 +440,6 @@
 // Write vector conversion function?
 #define vec_create_mask(mask, cond) mask.m = ((vector)cond).m
 #define vec_and(a, b) vandq_s32(((vector)a).m, ((vector)b).m)
-
 #define vec_mask_and(a, b) vec_and(a.v, b.v)
 #define vec_and_mask(a, mask) vcvtq_f32_s32(vec_and(a, mask.v))
 #define vec_init_mask_true(mask) mask.m = vec_setint1(0xFFFFFFFF)
@@ -450,6 +448,7 @@
 #define vec_zero_mask(mask) mask.v = vec_setzero()
 #define vec_pad_mask(mask, pad) \
   for (int i = VEC_SIZE - (pad); i < VEC_SIZE; i++) mask.i[i] = 0
+// Change to vector conversion function?
 #define vec_blend(mask, a, b)                                               \
   ((vector)vec_or(                                                          \
        vec_and(mask.m, ((vector)b).m),                                      \
@@ -469,7 +468,6 @@
 #define vec_fnma(a, b, c) vec_sub(c, vec_mul(a, b))
 
 #else /* __ARM_NEON_FP */
-
 #define VEC_SIZE 4
 #endif
 
@@ -483,6 +481,11 @@ typedef union {
   double d[VEC_SIZE / 2];
   int i[VEC_SIZE];
 } vector;
+
+inline void print_vector(vector v) {
+  printf("vector %.5e %.5e %.5e %.5e\n", v.f[0], v.f[1], v.f[2], v.f[3]);
+  fflush(stdout);
+}
 
 /* Define the mask type depending on the instruction set used. */
 #ifdef HAVE_AVX512_F
