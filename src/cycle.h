@@ -453,8 +453,9 @@ static inline double elapsed(ticks t1, ticks t0) {
 #endif
 
 /*----------------------------------------------------------------*/
+
 /* Cray UNICOS _rtc() intrinsic function */
-#if defined(HAVE__RTC) && !defined(HAVE_TICK_COUNTER)
+/*#if defined(HAVE__RTC) && !defined(HAVE_TICK_COUNTER)
 #ifdef HAVE_INTRINSICS_H
 #include <intrinsics.h>
 #endif
@@ -467,6 +468,7 @@ INLINE_ELAPSED(inline)
 
 #define HAVE_TICK_COUNTER
 #endif
+*/
 
 /*----------------------------------------------------------------*/
 /* MIPS ZBus */
