@@ -19,6 +19,7 @@
  ******************************************************************************/
 #ifndef SWIFT_VECTOR_H
 #define SWIFT_VECTOR_H
+#include <stdio.h>
 
 /* Config parameters. */
 #include "../config.h"
