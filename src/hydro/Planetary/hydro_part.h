@@ -201,6 +201,8 @@ struct part {
   /*! Time-step length */
   timebin_t time_bin;
 
+  timebin_t wakeup;
+
   /*! Tree-depth at which size / 2 <= h * gamma < size */
   char depth_h;
 
