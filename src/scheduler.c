@@ -57,6 +57,10 @@
 #include "timers.h"
 #include "version.h"
 
+#ifdef SWIFT_DEBUG_CHECKS
+int activate_by_unskip = 1;
+#endif
+
 /**
  * @brief Re-set the list of active tasks.
  */
@@ -1277,10 +1281,10 @@ static void scheduler_splittask_hydro(struct task *t, struct scheduler *s) {
         break;
       }
 
-      /* Get the sort ID, use space_getsid and not t->flags
+      /* Get the sort ID, use space_getsid_and_swap_cells and not t->flags
          to make sure we get ci and cj swapped if needed. */
       double shift[3];
-      const int sid = space_getsid(s->space, &ci, &cj, shift);
+      const int sid = space_getsid_and_swap_cells(s->space, &ci, &cj, shift);
 
 #ifdef SWIFT_DEBUG_CHECKS
       if (sid != t->flags)
@@ -1370,7 +1374,8 @@ static void scheduler_splittask_hydro(struct task *t, struct scheduler *s) {
                     scheduler_addtask(s, task_type_pair, t->subtype, 0, 0,
                                       ci->progeny[j], cj->progeny[k]);
                 scheduler_splittask_hydro(tl, s);
-                tl->flags = space_getsid(s->space, &t->ci, &t->cj, shift);
+                tl->flags = space_getsid_and_swap_cells(s->space, &t->ci,
+                                                        &t->cj, shift);
               }
       }
     } /* pair interaction? */
@@ -1733,6 +1738,10 @@ struct task *scheduler_addtask(struct scheduler *s, enum task_types type,
   t->tic = 0;
   t->toc = 0;
   t->total_ticks = 0;
+#ifdef SWIFT_DEBUG_CHECKS
+  t->activated_by_unskip = 0;
+  t->activated_by_marktask = 0;
+#endif
 
   if (ci != NULL) cell_set_flag(ci, cell_flag_has_tasks);
   if (cj != NULL) cell_set_flag(cj, cell_flag_has_tasks);

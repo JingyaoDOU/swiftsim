@@ -92,6 +92,7 @@ if test "$with_csds" = "yes"; then
    fi
 
    AC_CONFIG_SUBDIRS([csds])
+   CFLAGS="$CFLAGS $OPENMP_CFLAGS"
 
 fi
 AM_CONDITIONAL([HAVECSDS],[test $with_csds = "yes"])
@@ -1446,7 +1447,7 @@ AC_ARG_WITH([velociraptor],
 if test "x$with_velociraptor" != "xno"; then
    if test "x$with_velociraptor" != "xyes" -a "x$with_velociraptor" != "x"; then
       VELOCIRAPTOR_LIBS="-L$with_velociraptor -lvelociraptor -lstdc++ -lhdf5"
-      CFLAGS="$CFLAGS -fopenmp"
+      CFLAGS="$CFLAGS $OPENMP_CFLAGS"
    else
       VELOCIRAPTOR_LIBS=""
    fi
@@ -2770,7 +2771,7 @@ esac
 # Forcing terms
 AC_ARG_WITH([forcing],
    [AS_HELP_STRING([--with-forcing=<term>],
-      [Hydrodynamics forcing terms @<:@none, roberts-flow, roberts-flow-acceleration default: none@:>@]
+      [Hydrodynamics forcing terms @<:@none, roberts-flow, roberts-flow-acceleration , abc-flowdefault: none@:>@]
    )],
    [with_forcing="$withval"],
    [with_forcing="none"]
@@ -2784,6 +2785,9 @@ case "$with_forcing" in
    ;;
    roberts-flow-acceleration)
       AC_DEFINE([FORCING_ROBERTS_FLOW_ACCELERATION], [1], [Roberts' flow external forcing terms entering the equations as an acceleration term])
+   ;;
+   abc-flow)
+      AC_DEFINE([FORCING_ABC_FLOW], [1], [ABC flow external forcing terms])
    ;;
    *)
       AC_MSG_ERROR([Unknown external forcing term: $with_forcing])
